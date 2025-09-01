@@ -14,15 +14,6 @@ const EmployeeDetailModal = ({
 
   if (!isOpen || !employee) return null;
 
-  const formatDate = (dateString) => {
-    return new Date(dateString)?.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  };
-
   const tabs = [
     { id: 'overview', label: 'Overview', icon: 'User' },
     { id: 'services', label: 'Services', icon: 'Settings' },
@@ -39,10 +30,23 @@ const EmployeeDetailModal = ({
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-border">
             <div className="flex items-center space-x-4">
-              <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center">
-                <span className="text-xl font-bold text-primary-foreground">
-                  {employee?.name?.split(' ')?.map(n => n?.[0])?.join('')}
-                </span>
+              <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-border bg-muted flex items-center justify-center">
+                {employee?.pictureUrl ? (
+                  <img
+                    src={employee?.pictureUrl}
+                    alt={employee?.name}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      e.target.nextSibling.style.display = 'flex';
+                    }}
+                  />
+                ) : null}
+                <div className={`w-full h-full bg-primary rounded-full flex items-center justify-center ${employee?.pictureUrl ? 'hidden' : ''}`}>
+                  <span className="text-xl font-bold text-primary-foreground">
+                    {employee?.name?.split(' ')?.map(n => n?.[0])?.join('')}
+                  </span>
+                </div>
               </div>
               <div>
                 <h2 className="text-xl font-semibold text-foreground">{employee?.name}</h2>
@@ -114,12 +118,19 @@ const EmployeeDetailModal = ({
                         <Icon name="Phone" size={16} className="text-muted-foreground" />
                         <span className="text-sm text-foreground">{employee?.phone}</span>
                       </div>
-                      <div className="flex items-center space-x-3">
-                        <Icon name="Calendar" size={16} className="text-muted-foreground" />
-                        <span className="text-sm text-foreground">
-                          Joined {formatDate(employee?.startDate)}
-                        </span>
-                      </div>
+                      {employee?.pictureUrl && (
+                        <div className="flex items-center space-x-3">
+                          <Icon name="Image" size={16} className="text-muted-foreground" />
+                          <a 
+                            href={employee?.pictureUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-sm text-primary hover:underline truncate"
+                          >
+                            View Profile Picture
+                          </a>
+                        </div>
+                      )}
                     </div>
                   </div>
 

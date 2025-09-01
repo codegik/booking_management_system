@@ -34,7 +34,7 @@ const EmployeeManagementScreen = () => {
       phone: "+1 (555) 123-4567",
       role: "technician",
       status: "active",
-      startDate: "2024-01-15",
+      pictureUrl: "https://images.unsplash.com/photo-1494790108755-2616b612b47b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=687&q=80",
       lastLogin: "2025-08-30T14:30:00Z",
       notes: "Experienced technician with excellent customer service skills",
       assignedServices: [
@@ -53,7 +53,7 @@ const EmployeeManagementScreen = () => {
       phone: "+1 (555) 234-5678",
       role: "supervisor",
       status: "active",
-      startDate: "2023-11-20",
+      pictureUrl: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80",
       lastLogin: "2025-08-29T16:45:00Z",
       notes: "Team supervisor with 5+ years experience",
       assignedServices: [
@@ -73,7 +73,7 @@ const EmployeeManagementScreen = () => {
       phone: "+1 (555) 345-6789",
       role: "specialist",
       status: "active",
-      startDate: "2024-03-10",
+      pictureUrl: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80",
       lastLogin: "2025-08-28T09:20:00Z",
       notes: "Specialist in electrical systems and smart home installations",
       assignedServices: [
@@ -91,7 +91,7 @@ const EmployeeManagementScreen = () => {
       phone: "+1 (555) 456-7890",
       role: "technician",
       status: "inactive",
-      startDate: "2024-06-01",
+      pictureUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=687&q=80",
       lastLogin: "2025-08-25T11:30:00Z",
       notes: "Currently on leave",
       assignedServices: [
@@ -106,7 +106,7 @@ const EmployeeManagementScreen = () => {
       phone: "+1 (555) 567-8901",
       role: "manager",
       status: "active",
-      startDate: "2023-08-15",
+      pictureUrl: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=688&q=80",
       lastLogin: "2025-08-31T08:15:00Z",
       notes: "Operations manager overseeing daily activities",
       assignedServices: [

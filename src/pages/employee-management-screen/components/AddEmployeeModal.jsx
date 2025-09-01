@@ -19,8 +19,7 @@ const AddEmployeeModal = ({
     role: 'technician',
     status: 'active',
     assignedServices: [],
-    startDate: new Date()?.toISOString()?.split('T')?.[0],
-    notes: ''
+    pictureUrl: ''
   });
 
   const [errors, setErrors] = useState({});
@@ -70,12 +69,21 @@ const AddEmployeeModal = ({
       newErrors.phone = 'Phone number is required';
     }
 
-    if (!formData?.startDate) {
-      newErrors.startDate = 'Start date is required';
+    if (formData?.pictureUrl && !isValidUrl(formData?.pictureUrl)) {
+      newErrors.pictureUrl = 'Please enter a valid URL';
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors)?.length === 0;
+  };
+
+  const isValidUrl = (url) => {
+    try {
+      new URL(url);
+      return true;
+    } catch {
+      return false;
+    }
   };
 
   const handleSubmit = (e) => {
@@ -93,8 +101,7 @@ const AddEmployeeModal = ({
       role: 'technician',
       status: 'active',
       assignedServices: [],
-      startDate: new Date()?.toISOString()?.split('T')?.[0],
-      notes: ''
+      pictureUrl: ''
     });
     setErrors({});
   };
@@ -162,12 +169,13 @@ const AddEmployeeModal = ({
                   />
                   
                   <Input
-                    label="Start Date"
-                    type="date"
-                    value={formData?.startDate}
-                    onChange={(e) => handleInputChange('startDate', e?.target?.value)}
-                    error={errors?.startDate}
-                    required
+                    label="Picture URL"
+                    type="url"
+                    placeholder="https://example.com/photo.jpg"
+                    value={formData?.pictureUrl}
+                    onChange={(e) => handleInputChange('pictureUrl', e?.target?.value)}
+                    error={errors?.pictureUrl}
+                    description="Optional link to employee's profile picture"
                   />
                 </div>
 
@@ -188,6 +196,27 @@ const AddEmployeeModal = ({
                     required
                   />
                 </div>
+
+                {/* Picture Preview */}
+                {formData?.pictureUrl && isValidUrl(formData?.pictureUrl) && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Picture Preview</label>
+                    <div className="flex items-center space-x-3 p-3 border border-border rounded-lg bg-muted/30">
+                      <img
+                        src={formData?.pictureUrl}
+                        alt="Employee preview"
+                        className="w-12 h-12 rounded-full object-cover"
+                        onError={(e) => {
+                          e.target.src = '/public/assets/images/no_image.png';
+                        }}
+                      />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-foreground">Profile Picture</p>
+                        <p className="text-xs text-muted-foreground truncate">{formData?.pictureUrl}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Service Assignment */}
@@ -224,19 +253,6 @@ const AddEmployeeModal = ({
                     </p>
                   </div>
                 )}
-              </div>
-
-              {/* Additional Notes */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium text-foreground">Additional Information</h3>
-                <Input
-                  label="Notes"
-                  type="text"
-                  placeholder="Any additional notes about the employee..."
-                  value={formData?.notes}
-                  onChange={(e) => handleInputChange('notes', e?.target?.value)}
-                  description="Optional notes for internal reference"
-                />
               </div>
             </div>
 

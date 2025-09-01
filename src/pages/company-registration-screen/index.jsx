@@ -18,15 +18,9 @@ const CompanyRegistrationScreen = () => {
   const [formData, setFormData] = useState({
     // Company Details
     companyName: '',
-    businessType: '',
     phone: '',
     email: '',
     address: '',
-    city: '',
-    state: '',
-    zipCode: '',
-    website: '',
-    taxId: '',
     description: '',
     
     // Business Hours
@@ -64,14 +58,10 @@ const CompanyRegistrationScreen = () => {
     switch (step) {
       case 1:
         if (!formData?.companyName?.trim()) newErrors.companyName = 'Company name is required';
-        if (!formData?.businessType) newErrors.businessType = 'Business type is required';
         if (!formData?.phone?.trim()) newErrors.phone = 'Phone number is required';
         if (!formData?.email?.trim()) newErrors.email = 'Email is required';
         else if (!/\S+@\S+\.\S+/?.test(formData?.email)) newErrors.email = 'Email is invalid';
         if (!formData?.address?.trim()) newErrors.address = 'Address is required';
-        if (!formData?.city?.trim()) newErrors.city = 'City is required';
-        if (!formData?.state?.trim()) newErrors.state = 'State is required';
-        if (!formData?.zipCode?.trim()) newErrors.zipCode = 'ZIP code is required';
         break;
 
       case 2:
