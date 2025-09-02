@@ -78,34 +78,6 @@ const RegistrationForm = ({ formData, setFormData, errors = {} }) => {
     }));
   };
 
-  const setStandardHours = () => {
-    const standardHours = {};
-    daysOfWeek?.forEach(day => {
-      if (day?.key === 'sunday') {
-        standardHours[day.key] = { isOpen: false, openTime: '', closeTime: '' };
-      } else {
-        standardHours[day.key] = { isOpen: true, openTime: '09:00', closeTime: '17:00' };
-      }
-    });
-
-    setFormData(prev => ({
-      ...prev,
-      businessHours: standardHours
-    }));
-  };
-
-  const set24Hours = () => {
-    const allDayHours = {};
-    daysOfWeek?.forEach(day => {
-      allDayHours[day.key] = { isOpen: true, openTime: '00:00', closeTime: '23:30' };
-    });
-
-    setFormData(prev => ({
-      ...prev,
-      businessHours: allDayHours
-    }));
-  };
-
   return (
     <div className="space-y-8">
       <div className="space-y-6">
@@ -158,7 +130,7 @@ const RegistrationForm = ({ formData, setFormData, errors = {} }) => {
           <Input
             label="Business Description"
             type="text"
-            placeholder="Brief description of your business services"
+            placeholder="Brief description of your business"
             value={formData?.description || ''}
             onChange={(e) => handleInputChange('description', e?.target?.value)}
             error={errors?.description}
@@ -177,23 +149,6 @@ const RegistrationForm = ({ formData, setFormData, errors = {} }) => {
             <p className="text-sm text-muted-foreground">
               Set your operating hours for each day of the week
             </p>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={setStandardHours}
-              className="px-3 py-1.5 text-xs bg-muted hover:bg-muted/80 text-muted-foreground rounded-md transition-smooth"
-            >
-              Standard Hours
-            </button>
-            <button
-              type="button"
-              onClick={set24Hours}
-              className="px-3 py-1.5 text-xs bg-muted hover:bg-muted/80 text-muted-foreground rounded-md transition-smooth"
-            >
-              24/7 Hours
-            </button>
           </div>
         </div>
 
