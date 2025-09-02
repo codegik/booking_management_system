@@ -19,7 +19,12 @@ export default defineConfig({
     allowedHosts: ['.amazonaws.com', '.builtwithrocket.new'],
     proxy: {
       '/api': {
-        target: 'http://localhost:8080', // Your backend server
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        secure: false
+      },
+      '/induction': {
+        target: 'http://localhost:8080',
         changeOrigin: true,
         secure: false
       }

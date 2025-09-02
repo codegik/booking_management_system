@@ -29,10 +29,38 @@ const Routes = () => {
             </ProtectedRoute>
           }
         />
-        <Route path="/company-dashboard" element={<CompanyDashboard />} />
-        <Route path="/service-management-screen" element={<ServiceManagementScreen />} />
-        <Route path="/employee-management-screen" element={<EmployeeManagementScreen />} />
-        <Route path="/create-edit-booking-screen" element={<CreateEditBookingScreen />} />
+        <Route
+          path="/company-dashboard"
+          element={
+            <ProtectedRoute>
+              <CompanyDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/service-management-screen"
+          element={
+            <ProtectedRoute>
+              <ServiceManagementScreen />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/employee-management-screen"
+          element={
+            <ProtectedRoute>
+              <EmployeeManagementScreen />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/create-edit-booking-screen"
+          element={
+            <ProtectedRoute>
+              <CreateEditBookingScreen />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/customer-dashboard" element={<CustomerDashboard />} />
         <Route path="*" element={<NotFound />} />
       </RouterRoutes>

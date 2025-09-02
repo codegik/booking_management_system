@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
-import RegistrationForm from './components/RegistrationForm';
+import CombinedRegistrationForm from './components/RegistrationForm';
+import { makeAuthenticatedRequest, markCompanyAsRegistered } from '../../utils/auth';
 
 const CompanyRegistrationScreen = () => {
   const navigate = useNavigate();
@@ -85,12 +86,9 @@ const CompanyRegistrationScreen = () => {
         workDays: workDays
       };
 
-      // Call the company registration API
-      const response = await fetch('/api/company/add', {
+      // Call the company registration API with JWT authentication
+      const response = await makeAuthenticatedRequest('/api/company/add', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(registrationData)
       });
 
@@ -102,6 +100,9 @@ const CompanyRegistrationScreen = () => {
       const result = await response.json();
       console.log('Registration successful:', result);
 
+      // Mark company as registered to prevent redirect loop
+      markCompanyAsRegistered();
+
       // Redirect to company dashboard
       navigate('/company-dashboard');
     } catch (error) {
@@ -110,12 +111,6 @@ const CompanyRegistrationScreen = () => {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const saveDraft = () => {
-    // Save draft functionality
-    localStorage.setItem('companyRegistrationDraft', JSON.stringify({ formData }));
-    alert('Draft saved successfully!');
   };
 
   return (
@@ -155,7 +150,7 @@ const CompanyRegistrationScreen = () => {
           </div>
 
           <div className="space-y-6">
-            <RegistrationForm
+            <CombinedRegistrationForm
               formData={formData}
               setFormData={setFormData}
               errors={errors}

@@ -2,17 +2,82 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
+import { isCompanyRegistered } from '../../utils/auth';
+
+// Simple UUID v4 generator
+const generateUUID = () => {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+};
 
 const SocialLoginScreen = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const handleSocialLogin = async (provider) => {
+  const handleGoogleLogin = async () => {
     setIsLoading(true);
+    setError(null);
 
     try {
-      // Simulate social login process
-      console.log(`Logging in with ${provider}`);
+      // Generate UUIDs for entityId and tenant
+      const entityId = generateUUID();
+      const tenant = generateUUID();
+
+      // Call the JWT generation API
+      const response = await fetch('/induction/generate-jwt', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          entityId: entityId,
+          tenant: tenant
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Authentication failed');
+      }
+
+      const tokenData = await response.json();
+      console.log('JWT Token generated:', tokenData);
+
+      // Store the authentication data
+      localStorage.setItem('isAuthenticated', 'true');
+      localStorage.setItem('authProvider', 'google');
+      localStorage.setItem('jwtToken', tokenData.token);
+      localStorage.setItem('entityId', tokenData.entityId);
+      localStorage.setItem('tenant', tokenData.tenant);
+      localStorage.setItem('tokenExpiresAt', tokenData.expiresAt);
+
+      // Check if company is already registered and redirect accordingly
+      if (isCompanyRegistered()) {
+        // Company already registered, go to dashboard
+        navigate('/company-dashboard');
+      } else {
+        // Company not registered yet, go to registration
+        navigate('/company-registration-screen');
+      }
+    } catch (error) {
+      console.error('Google login failed:', error);
+      setError(error.message || 'Authentication failed. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleOtherSocialLogin = async (provider) => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // For other providers, use mock authentication for now
+      console.log(`Logging in with ${provider} (mock)`);
 
       // Mock authentication delay
       await new Promise(resolve => setTimeout(resolve, 1500));
@@ -25,6 +90,7 @@ const SocialLoginScreen = () => {
       navigate('/company-registration-screen');
     } catch (error) {
       console.error('Login failed:', error);
+      setError('Authentication failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -67,10 +133,20 @@ const SocialLoginScreen = () => {
                 Choose your sign-in method
               </h2>
 
+              {/* Error Message */}
+              {error && (
+                <div className="bg-error/10 border border-error/20 rounded-lg p-4 mb-4">
+                  <div className="flex items-center space-x-3">
+                    <Icon name="AlertCircle" size={16} className="text-error" />
+                    <p className="text-sm text-error">{error}</p>
+                  </div>
+                </div>
+              )}
+
               {/* Google Login */}
               <Button
                 variant="outline"
-                onClick={() => handleSocialLogin('google')}
+                onClick={handleGoogleLogin}
                 disabled={isLoading}
                 className="w-full justify-center space-x-3 h-12"
               >
@@ -81,7 +157,7 @@ const SocialLoginScreen = () => {
               {/* Microsoft Login */}
               <Button
                 variant="outline"
-                onClick={() => handleSocialLogin('microsoft')}
+                onClick={() => handleOtherSocialLogin('microsoft')}
                 disabled={isLoading}
                 className="w-full justify-center space-x-3 h-12"
               >
@@ -92,7 +168,7 @@ const SocialLoginScreen = () => {
               {/* GitHub Login */}
               <Button
                 variant="outline"
-                onClick={() => handleSocialLogin('github')}
+                onClick={() => handleOtherSocialLogin('github')}
                 disabled={isLoading}
                 className="w-full justify-center space-x-3 h-12"
               >
@@ -103,7 +179,7 @@ const SocialLoginScreen = () => {
               {/* Apple Login */}
               <Button
                 variant="outline"
-                onClick={() => handleSocialLogin('apple')}
+                onClick={() => handleOtherSocialLogin('apple')}
                 disabled={isLoading}
                 className="w-full justify-center space-x-3 h-12"
               >
@@ -130,15 +206,6 @@ const SocialLoginScreen = () => {
                 </div>
               </div>
             </div>
-          </div>
-
-          <div className="text-center">
-            <p className="text-xs text-muted-foreground">
-              By continuing, you agree to our{' '}
-              <a href="#" className="text-primary hover:underline">Terms of Service</a>
-              {' '}and{' '}
-              <a href="#" className="text-primary hover:underline">Privacy Policy</a>
-            </p>
           </div>
         </div>
       </main>
