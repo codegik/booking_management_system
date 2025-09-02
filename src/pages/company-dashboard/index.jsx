@@ -76,10 +76,12 @@ const CompanyDashboard = () => {
   ];
 
   useEffect(() => {
-    // Check authentication
-    const token = localStorage.getItem('authToken');
-    if (!token) {
-      navigate('/company-registration-screen');
+    // Check authentication using the correct token key
+    const token = localStorage.getItem('jwtToken');
+    const isAuthenticated = localStorage.getItem('isAuthenticated');
+
+    if (!token || !isAuthenticated || isAuthenticated !== 'true') {
+      navigate('/');
       return;
     }
 

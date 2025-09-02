@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
-import CombinedRegistrationForm from './components/RegistrationForm';
+import RegistrationForm from './components/RegistrationForm';
 import { makeAuthenticatedRequest, markCompanyAsRegistered } from '../../utils/auth';
 
 const CompanyRegistrationScreen = () => {
@@ -150,7 +150,7 @@ const CompanyRegistrationScreen = () => {
           </div>
 
           <div className="space-y-6">
-            <CombinedRegistrationForm
+            <RegistrationForm
               formData={formData}
               setFormData={setFormData}
               errors={errors}
