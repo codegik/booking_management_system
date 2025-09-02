@@ -1,41 +1,31 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, {useState} from 'react';
+import {useNavigate} from 'react-router-dom';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
-import { isCompanyRegistered } from '../../utils/auth';
+import {isCompanyRegistered} from '../../utils/auth';
+import useGoogleAuth from '../../utils/useGoogleAuth';
 
-// Simple UUID v4 generator
-const generateUUID = () => {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    const r = Math.random() * 16 | 0;
-    const v = c === 'x' ? r : (r & 0x3 | 0x8);
-    return v.toString(16);
-  });
-};
 
 const SocialLoginScreen = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const { isGoogleLoaded, isFedCMSupported, signInWithGoogle } = useGoogleAuth();
 
   const handleGoogleLogin = async () => {
     setIsLoading(true);
     setError(null);
 
     try {
-      // Generate UUIDs for entityId and tenant
-      const entityId = generateUUID();
-      const tenant = generateUUID();
-
-      // Call the JWT generation API
-      const response = await fetch('/induction/generate-jwt', {
+      const googleAuthResult = await signInWithGoogle();
+      const response = await fetch('/api/auth/google', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          entityId: entityId,
-          tenant: tenant
+          token: googleAuthResult.credential,
+          cellphone: "TBD",
         })
       });
 
@@ -45,52 +35,23 @@ const SocialLoginScreen = () => {
       }
 
       const tokenData = await response.json();
-      console.log('JWT Token generated:', tokenData);
 
-      // Store the authentication data
       localStorage.setItem('isAuthenticated', 'true');
       localStorage.setItem('authProvider', 'google');
       localStorage.setItem('jwtToken', tokenData.token);
-      localStorage.setItem('entityId', tokenData.entityId);
-      localStorage.setItem('tenant', tokenData.tenant);
-      localStorage.setItem('tokenExpiresAt', tokenData.expiresAt);
+      localStorage.setItem('userEmail', googleAuthResult.email);
+      localStorage.setItem('userName', googleAuthResult.name);
+      localStorage.setItem('userPicture', googleAuthResult.picture);
 
       // Check if company is already registered and redirect accordingly
       if (isCompanyRegistered()) {
-        // Company already registered, go to dashboard
         navigate('/company-dashboard');
       } else {
-        // Company not registered yet, go to registration
         navigate('/company-registration-screen');
       }
     } catch (error) {
       console.error('Google login failed:', error);
       setError(error.message || 'Authentication failed. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleOtherSocialLogin = async (provider) => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      // For other providers, use mock authentication for now
-      console.log(`Logging in with ${provider} (mock)`);
-
-      // Mock authentication delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      // Simulate successful authentication
-      localStorage.setItem('isAuthenticated', 'true');
-      localStorage.setItem('authProvider', provider);
-
-      // Redirect to company registration
-      navigate('/company-registration-screen');
-    } catch (error) {
-      console.error('Login failed:', error);
-      setError('Authentication failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -133,6 +94,30 @@ const SocialLoginScreen = () => {
                 Choose your sign-in method
               </h2>
 
+              {/* FedCM Support Indicator */}
+              {isFedCMSupported && (
+                <div className="bg-success/10 border border-success/20 rounded-lg p-4 mb-4">
+                  <div className="flex items-center space-x-3">
+                    <Icon name="Shield" size={16} className="text-success" />
+                    <p className="text-sm text-success">
+                      Using enhanced security with FedCM authentication
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Configuration Warning */}
+              {!isGoogleLoaded && !isFedCMSupported && (
+                <div className="bg-warning/10 border border-warning/20 rounded-lg p-4 mb-4">
+                  <div className="flex items-center space-x-3">
+                    <Icon name="AlertCircle" size={16} className="text-warning" />
+                    <p className="text-sm text-warning">
+                      Loading authentication services... Please wait.
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* Error Message */}
               {error && (
                 <div className="bg-error/10 border border-error/20 rounded-lg p-4 mb-4">
@@ -147,49 +132,18 @@ const SocialLoginScreen = () => {
               <Button
                 variant="outline"
                 onClick={handleGoogleLogin}
-                disabled={isLoading}
+                disabled={isLoading || (!isGoogleLoaded && !isFedCMSupported)}
                 className="w-full justify-center space-x-3 h-12"
               >
                 <Icon name="Chrome" size={20} />
                 <span>Continue with Google</span>
               </Button>
 
-              {/* Microsoft Login */}
-              <Button
-                variant="outline"
-                onClick={() => handleOtherSocialLogin('microsoft')}
-                disabled={isLoading}
-                className="w-full justify-center space-x-3 h-12"
-              >
-                <Icon name="Users" size={20} />
-                <span>Continue with Microsoft</span>
-              </Button>
-
-              {/* GitHub Login */}
-              <Button
-                variant="outline"
-                onClick={() => handleOtherSocialLogin('github')}
-                disabled={isLoading}
-                className="w-full justify-center space-x-3 h-12"
-              >
-                <Icon name="Github" size={20} />
-                <span>Continue with GitHub</span>
-              </Button>
-
-              {/* Apple Login */}
-              <Button
-                variant="outline"
-                onClick={() => handleOtherSocialLogin('apple')}
-                disabled={isLoading}
-                className="w-full justify-center space-x-3 h-12"
-              >
-                <Icon name="Apple" size={20} />
-                <span>Continue with Apple</span>
-              </Button>
+              {/* Other social login buttons can be added here */}
 
               {isLoading && (
                 <div className="text-center text-sm text-muted-foreground mt-4">
-                  Authenticating...
+                  {isFedCMSupported ? 'Authenticating with FedCM...' : 'Authenticating with Google...'}
                 </div>
               )}
             </div>
