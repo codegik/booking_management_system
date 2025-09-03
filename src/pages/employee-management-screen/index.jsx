@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import RoleBasedHeader from '../../components/ui/RoleBasedHeader';
 import AdminSidebar from '../../components/ui/AdminSidebar';
 import Button from '../../components/ui/Button';
+import useCompanyDetails from '../../utils/useCompanyDetails';
 
 import EmployeeTable from './components/EmployeeTable';
 import EmployeeSummaryCards from './components/EmployeeSummaryCards';
@@ -131,15 +132,15 @@ const EmployeeManagementScreen = () => {
     { id: 6, name: "Appliance Repair", description: "Home appliance repair and maintenance", duration: 75, price: 90, status: "active" }
   ];
 
-  const currentUser = {
-    role: 'admin',
-    name: 'John Doe'
-  };
+  const { user, company, isLoading: isLoadingCompany, fetchCompanyDetails } = useCompanyDetails();
 
-  const company = {
-    name: 'ServicePro Management',
-    logo: null
-  };
+  // Mock notifications
+  const notifications = { count: 3 };
+
+  useEffect(() => {
+    // Fetch company details when component mounts
+    fetchCompanyDetails();
+  }, [fetchCompanyDetails]);
 
   // Filter employees based on current filters
   const filteredEmployees = employees?.filter(employee => {
@@ -278,9 +279,9 @@ const EmployeeManagementScreen = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <RoleBasedHeader
-        user={currentUser}
+        user={user}
         company={company}
-        notifications={{ count: 0 }}
+        notifications={notifications}
         onLogout={handleLogout}
         onToggleSidebar={handleToggleSidebar}
         isSidebarCollapsed={isSidebarCollapsed}
@@ -289,7 +290,7 @@ const EmployeeManagementScreen = () => {
       <AdminSidebar
         isCollapsed={isSidebarCollapsed}
         onToggle={handleToggleSidebar}
-        user={currentUser}
+        user={user}
       />
       {/* Main Content */}
       <main className={`pt-16 transition-all duration-300 ${
@@ -383,3 +384,4 @@ const EmployeeManagementScreen = () => {
 };
 
 export default EmployeeManagementScreen;
+

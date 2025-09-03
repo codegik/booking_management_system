@@ -101,7 +101,7 @@ const useGoogleAuth = () => {
 
       const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
-      if (!clientId || clientId === 'your-google-oauth-client-id-here') {
+      if (!clientId) {
         reject(new Error('Google OAuth Client ID not configured. Please set VITE_GOOGLE_CLIENT_ID in your .env file'));
         return;
       }

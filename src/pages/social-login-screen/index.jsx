@@ -2,9 +2,26 @@ import React, {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
-import {isCompanyRegistered} from '../../utils/auth';
+import {isCompanyRegistered, clearAuthData} from '../../utils/auth';
 import useGoogleAuth from '../../utils/useGoogleAuth';
 
+// Helper function to decode JWT token
+const decodeJWT = (token) => {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    return JSON.parse(jsonPayload);
+  } catch (error) {
+    console.error('Failed to decode JWT token:', error);
+    return null;
+  }
+};
 
 const SocialLoginScreen = () => {
   const navigate = useNavigate();
@@ -23,31 +40,30 @@ const SocialLoginScreen = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          token: googleAuthResult.credential,
-          cellphone: "TBD",
-        })
+        body: JSON.stringify({ token: googleAuthResult.credential })
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Authentication failed');
-      }
-
-      const tokenData = await response.json();
-
-      localStorage.setItem('isAuthenticated', 'true');
-      localStorage.setItem('authProvider', 'google');
-      localStorage.setItem('jwtToken', tokenData.token);
-      localStorage.setItem('userEmail', googleAuthResult.email);
-      localStorage.setItem('userName', googleAuthResult.name);
-      localStorage.setItem('userPicture', googleAuthResult.picture);
-
-      // Check if company is already registered and redirect accordingly
-      if (isCompanyRegistered()) {
-        navigate('/company-dashboard');
+        clearAuthData();
+        navigate('/');
       } else {
-        navigate('/company-registration-screen');
+          const tokenData = await response.json();
+          const decodedToken = decodeJWT(tokenData.token);
+
+          localStorage.setItem('isAuthenticated', 'true');
+          localStorage.setItem('authProvider', 'google');
+          localStorage.setItem('jwtToken', tokenData.token);
+          localStorage.setItem('userEmail', decodedToken.email);
+          localStorage.setItem('userName', decodedToken.name);
+          localStorage.setItem('userPicture', decodedToken.pictureUrl);
+          localStorage.setItem('userRole', decodedToken.role);
+
+          // Check if company is already registered and redirect accordingly
+          if (isCompanyRegistered()) {
+              navigate('/company-dashboard');
+          } else {
+              navigate('/company-registration-screen');
+          }
       }
     } catch (error) {
       console.error('Google login failed:', error);

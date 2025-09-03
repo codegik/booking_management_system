@@ -91,16 +91,8 @@ const RegistrationForm = ({ formData, setFormData, errors = {} }) => {
             error={errors?.companyName}
             required
             className="lg:col-span-2"
-          />
-
-          <Input
-            label="Phone Number"
-            type="tel"
-            placeholder="+00 00 00000 0000"
-            value={formData?.phone || ''}
-            onChange={(e) => handlePhoneChange(e?.target?.value)}
-            error={errors?.phone}
-            required
+            disabled={true}
+            readOnly={true}
           />
 
           <Input
@@ -110,6 +102,18 @@ const RegistrationForm = ({ formData, setFormData, errors = {} }) => {
             value={formData?.email || ''}
             onChange={(e) => handleInputChange('email', e?.target?.value)}
             error={errors?.email}
+            required
+            disabled={true}
+            readOnly={true}
+          />
+
+          <Input
+            label="Phone Number"
+            type="tel"
+            placeholder="+00 00 00000 0000"
+            value={formData?.phone || ''}
+            onChange={(e) => handlePhoneChange(e?.target?.value)}
+            error={errors?.phone}
             required
           />
         </div>

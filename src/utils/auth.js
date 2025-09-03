@@ -12,20 +12,11 @@ export const getAuthHeaders = () => {
   };
 };
 
-export const isTokenExpired = () => {
-  const expiresAt = localStorage.getItem('tokenExpiresAt');
-  if (!expiresAt) return true;
-
-  return new Date() >= new Date(expiresAt);
-};
 
 export const clearAuthData = () => {
   localStorage.removeItem('isAuthenticated');
   localStorage.removeItem('authProvider');
   localStorage.removeItem('jwtToken');
-  localStorage.removeItem('entityId');
-  localStorage.removeItem('tenant');
-  localStorage.removeItem('tokenExpiresAt');
   localStorage.removeItem('companyRegistered');
 };
 
