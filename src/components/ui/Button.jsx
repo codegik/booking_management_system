@@ -50,6 +50,8 @@ const Button = React.forwardRef(({
     ...props
 }, ref) => {
     const Comp = asChild ? Slot : "button";
+    // Filter out custom props that shouldn't be passed to DOM
+    const { iconName: _, iconPosition: __, iconSize: ___, fullWidth: ____, loading: _____, ...domProps } = props;
 
     // Icon size mapping based on button size
     const iconSizeMap = {
@@ -97,7 +99,7 @@ const Button = React.forwardRef(({
             )}
             ref={ref}
             disabled={disabled || loading}
-            {...props}
+            {...domProps}
         >
             {loading && <LoadingSpinner />}
             {iconName && iconPosition === 'left' && renderIcon()}
@@ -137,7 +139,7 @@ const Button = React.forwardRef(({
                 children: content,
             });
 
-            return <Comp ref={ref} {...props}>{clonedChild}</Comp>;
+            return <Comp ref={ref} {...domProps}>{clonedChild}</Comp>;
         } catch {
             return renderFallbackButton();
         }
@@ -151,7 +153,7 @@ const Button = React.forwardRef(({
             )}
             ref={ref}
             disabled={disabled || loading}
-            {...props}
+            {...domProps}
         >
             {loading && <LoadingSpinner />}
             {iconName && iconPosition === 'left' && renderIcon()}

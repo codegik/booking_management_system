@@ -183,8 +183,8 @@ const ServiceManagementScreen = () => {
   };
 
   const filteredServices = services.filter(service => {
-    const matchesSearchTerm = service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      service.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearchTerm = service.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (service.description && service.description.toLowerCase().includes(searchTerm.toLowerCase()));
 
     const matchesStatusFilter = filterStatus === 'all' ||
       (filterStatus === 'active' && service.isActive) ||

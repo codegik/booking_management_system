@@ -1,22 +1,26 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getAuthToken } from '../utils/auth';
 
 const ProtectedRoute = ({ children }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    const token = getAuthToken();
     const isAuthenticated = localStorage.getItem('isAuthenticated');
 
-    if (!isAuthenticated || isAuthenticated !== 'true') {
+    // Check both token existence and authentication flag
+    if (!token || !isAuthenticated || isAuthenticated !== 'true') {
       // Redirect to login if not authenticated
       navigate('/', { replace: true });
     }
   }, [navigate]);
 
   // Check authentication status
+  const token = getAuthToken();
   const isAuthenticated = localStorage.getItem('isAuthenticated');
 
-  if (!isAuthenticated || isAuthenticated !== 'true') {
+  if (!token || !isAuthenticated || isAuthenticated !== 'true') {
     return null; // Don't render anything while redirecting
   }
 

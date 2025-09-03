@@ -1,167 +1,122 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import RoleBasedHeader from '../../components/ui/RoleBasedHeader';
 import AdminSidebar from '../../components/ui/AdminSidebar';
 import Button from '../../components/ui/Button';
+import Input from '../../components/ui/Input';
+import Select from '../../components/ui/Select';
 import useCompanyDetails from '../../utils/useCompanyDetails';
-
-import EmployeeTable from './components/EmployeeTable';
-import EmployeeSummaryCards from './components/EmployeeSummaryCards';
-import EmployeeFilters from './components/EmployeeFilters';
-import AddEmployeeModal from './components/AddEmployeeModal';
-import EmployeeDetailModal from './components/EmployeeDetailModal';
-import ServiceAssignmentModal from './components/ServiceAssignmentModal';
+import Icon from '../../components/AppIcon';
+import { makeAuthenticatedRequest, clearAuthData } from '../../utils/auth';
+import { maskPhone, validatePhone } from '../../utils/phoneFormatter';
 
 const EmployeeManagementScreen = () => {
+  const navigate = useNavigate();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [serviceFilter, setServiceFilter] = useState('all');
-  const [dateRange, setDateRange] = useState({ start: '', end: '' });
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
-  
-  // Modal states
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [isServiceModalOpen, setIsServiceModalOpen] = useState(false);
-  const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [isAddingEmployee, setIsAddingEmployee] = useState(false);
+  const [editingEmployee, setEditingEmployee] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [employees, setEmployees] = useState([]);
+  const [availableWorks, setAvailableWorks] = useState([]);
+  const [formErrors, setFormErrors] = useState({});
 
-  // Mock data
-  const [employees, setEmployees] = useState([
-    {
-      id: 1,
-      name: "Sarah Johnson",
-      email: "sarah.johnson@company.com",
-      phone: "+1 (555) 123-4567",
-      role: "technician",
-      status: "active",
-      pictureUrl: "https://images.unsplash.com/photo-1494790108755-2616b612b47b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=687&q=80",
-      lastLogin: "2025-08-30T14:30:00Z",
-      notes: "Experienced technician with excellent customer service skills",
-      assignedServices: [
-        { id: 1, name: "AC Repair", description: "Air conditioning repair and maintenance", duration: 120, price: 150, status: "active" },
-        { id: 2, name: "Heating Service", description: "Heating system installation and repair", duration: 90, price: 120, status: "active" }
-      ],
-      recentActivity: [
-        { type: "login", description: "Logged into the system", timestamp: "2025-08-30T14:30:00Z" },
-        { type: "booking", description: "Completed AC repair booking #1234", timestamp: "2025-08-30T10:15:00Z" }
-      ]
-    },
-    {
-      id: 2,
-      name: "Michael Rodriguez",
-      email: "michael.rodriguez@company.com",
-      phone: "+1 (555) 234-5678",
-      role: "supervisor",
-      status: "active",
-      pictureUrl: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80",
-      lastLogin: "2025-08-29T16:45:00Z",
-      notes: "Team supervisor with 5+ years experience",
-      assignedServices: [
-        { id: 1, name: "AC Repair", description: "Air conditioning repair and maintenance", duration: 120, price: 150, status: "active" },
-        { id: 3, name: "Plumbing Service", description: "Plumbing installation and repair", duration: 60, price: 80, status: "active" },
-        { id: 4, name: "Electrical Work", description: "Electrical installation and troubleshooting", duration: 90, price: 100, status: "active" }
-      ],
-      recentActivity: [
-        { type: "login", description: "Logged into the system", timestamp: "2025-08-29T16:45:00Z" },
-        { type: "booking", description: "Supervised plumbing service #1235", timestamp: "2025-08-29T13:20:00Z" }
-      ]
-    },
-    {
-      id: 3,
-      name: "Emily Chen",
-      email: "emily.chen@company.com",
-      phone: "+1 (555) 345-6789",
-      role: "specialist",
-      status: "active",
-      pictureUrl: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80",
-      lastLogin: "2025-08-28T09:20:00Z",
-      notes: "Specialist in electrical systems and smart home installations",
-      assignedServices: [
-        { id: 4, name: "Electrical Work", description: "Electrical installation and troubleshooting", duration: 90, price: 100, status: "active" },
-        { id: 5, name: "Smart Home Setup", description: "Smart home device installation and configuration", duration: 180, price: 200, status: "active" }
-      ],
-      recentActivity: [
-        { type: "login", description: "Logged into the system", timestamp: "2025-08-28T09:20:00Z" }
-      ]
-    },
-    {
-      id: 4,
-      name: "David Thompson",
-      email: "david.thompson@company.com",
-      phone: "+1 (555) 456-7890",
-      role: "technician",
-      status: "inactive",
-      pictureUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=687&q=80",
-      lastLogin: "2025-08-25T11:30:00Z",
-      notes: "Currently on leave",
-      assignedServices: [
-        { id: 2, name: "Heating Service", description: "Heating system installation and repair", duration: 90, price: 120, status: "inactive" }
-      ],
-      recentActivity: []
-    },
-    {
-      id: 5,
-      name: "Lisa Wang",
-      email: "lisa.wang@company.com",
-      phone: "+1 (555) 567-8901",
-      role: "manager",
-      status: "active",
-      pictureUrl: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=688&q=80",
-      lastLogin: "2025-08-31T08:15:00Z",
-      notes: "Operations manager overseeing daily activities",
-      assignedServices: [
-        { id: 1, name: "AC Repair", description: "Air conditioning repair and maintenance", duration: 120, price: 150, status: "active" },
-        { id: 2, name: "Heating Service", description: "Heating system installation and repair", duration: 90, price: 120, status: "active" },
-        { id: 3, name: "Plumbing Service", description: "Plumbing installation and repair", duration: 60, price: 80, status: "active" },
-        { id: 4, name: "Electrical Work", description: "Electrical installation and troubleshooting", duration: 90, price: 100, status: "active" }
-      ],
-      recentActivity: [
-        { type: "login", description: "Logged into the system", timestamp: "2025-08-31T08:15:00Z" },
-        { type: "booking", description: "Reviewed booking reports", timestamp: "2025-08-31T08:30:00Z" }
-      ]
+  const { user, company, fetchCompanyDetails } = useCompanyDetails();
+  const notifications = { count: 0 };
+
+  // Helper function to convert minutes to hour:minute format (same as service-management-screen)
+  const formatDuration = (minutes) => {
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+
+    if (hours === 0) {
+      return `${remainingMinutes} min`;
+    } else if (remainingMinutes === 0) {
+      return `${hours} hour${hours > 1 ? 's' : ''}`;
+    } else {
+      return `${hours} hour${hours > 1 ? 's' : ''} ${remainingMinutes} min`;
     }
-  ]);
+  };
 
-  const availableServices = [
-    { id: 1, name: "AC Repair", description: "Air conditioning repair and maintenance", duration: 120, price: 150, status: "active" },
-    { id: 2, name: "Heating Service", description: "Heating system installation and repair", duration: 90, price: 120, status: "active" },
-    { id: 3, name: "Plumbing Service", description: "Plumbing installation and repair", duration: 60, price: 80, status: "active" },
-    { id: 4, name: "Electrical Work", description: "Electrical installation and troubleshooting", duration: 90, price: 100, status: "active" },
-    { id: 5, name: "Smart Home Setup", description: "Smart home device installation and configuration", duration: 180, price: 200, status: "active" },
-    { id: 6, name: "Appliance Repair", description: "Home appliance repair and maintenance", duration: 75, price: 90, status: "active" }
-  ];
+  // Fetch employees from API
+  const fetchEmployees = async () => {
+    try {
+      setIsLoading(true);
 
-  const { user, company, isLoading: isLoadingCompany, fetchCompanyDetails } = useCompanyDetails();
+      // Use the authenticated request utility
+      const response = await makeAuthenticatedRequest('/api/company/employees/work-assignments');
 
-  // Mock notifications
-  const notifications = { count: 3 };
+      if (response.ok) {
+        const employeeAssignments = await response.json();
+
+        // Transform the data to match our component structure
+        const transformedEmployees = employeeAssignments.map(assignment => ({
+          id: assignment.employee.id,
+          name: assignment.employee.name || 'Unknown',
+          email: assignment.employee.email || '',
+          cellphone: assignment.employee.cellphone || '',
+          status: assignment.employee.isActive ? 'active' : 'inactive',
+          assignedServices: assignment.assignedWorks?.map(work => work.id) || []
+        }));
+
+        setEmployees(transformedEmployees);
+      } else if (response.status === 401) {
+        // Clear auth data and redirect to login
+        clearAuthData();
+        navigate('/', { replace: true });
+      }
+    } catch (error) {
+      console.error('Error fetching employees:', error);
+      // If it's an authentication error, redirect to login
+      if (error.message?.includes('Authentication expired')) {
+        navigate('/', { replace: true });
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch available works/services from API
+  const fetchAvailableWorks = async () => {
+    try {
+      const response = await makeAuthenticatedRequest('/api/work/all?inactive=false');
+
+      if (response.ok) {
+        const works = await response.json();
+        const transformedWorks = works.map(work => ({
+          id: work.id,
+          name: work.name,
+          price: work.price / 100, // Convert from cents to dollars
+          durationMinutes: work.durationMinutes
+        }));
+        setAvailableWorks(transformedWorks);
+      } else if (response.status === 401) {
+        // Clear auth data and redirect to login
+        clearAuthData();
+        navigate('/', { replace: true });
+      }
+    } catch (error) {
+      console.error('Error fetching works:', error);
+      // If it's an authentication error, redirect to login
+      if (error.message?.includes('Authentication expired')) {
+        navigate('/', { replace: true });
+      }
+    }
+  };
 
   useEffect(() => {
-    // Fetch company details when component mounts
     fetchCompanyDetails();
+    fetchEmployees();
+    fetchAvailableWorks();
   }, [fetchCompanyDetails]);
 
-  // Filter employees based on current filters
-  const filteredEmployees = employees?.filter(employee => {
-    const matchesSearch = employee?.name?.toLowerCase()?.includes(searchTerm?.toLowerCase()) ||
-                         employee?.email?.toLowerCase()?.includes(searchTerm?.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || employee?.status === statusFilter;
-    const matchesService = serviceFilter === 'all' || 
-                          employee?.assignedServices?.some(service => service?.id?.toString() === serviceFilter);
-    
-    let matchesDateRange = true;
-    if (dateRange?.start || dateRange?.end) {
-      const loginDate = new Date(employee.lastLogin);
-      if (dateRange?.start) {
-        matchesDateRange = matchesDateRange && loginDate >= new Date(dateRange.start);
-      }
-      if (dateRange?.end) {
-        matchesDateRange = matchesDateRange && loginDate <= new Date(dateRange.end);
-      }
-    }
-    
-    return matchesSearch && matchesStatus && matchesService && matchesDateRange;
+  // Filter employees
+  const filteredEmployees = employees.filter(employee => {
+    const matchesSearch = employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         employee.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || employee.status === statusFilter;
+    return matchesSearch && matchesStatus;
   });
 
   const handleLogout = () => {
@@ -172,108 +127,218 @@ const EmployeeManagementScreen = () => {
     setIsSidebarCollapsed(!isSidebarCollapsed);
   };
 
-  const handleClearFilters = () => {
-    setSearchTerm('');
-    setStatusFilter('all');
-    setServiceFilter('all');
-    setDateRange({ start: '', end: '' });
+  const handleAddEmployee = () => {
+    setIsAddingEmployee(true);
+    setEditingEmployee({
+      id: null,
+      name: '',
+      email: '',
+      phone: '',
+      assignedServices: []
+    });
   };
 
-  const handleAddEmployee = async (employeeData) => {
+  const handleEditEmployee = (employee) => {
+    setIsAddingEmployee(false);
+    setEditingEmployee({ ...employee });
+  };
+
+  // Email validation function
+  const validateEmail = (email) => {
+    if (!email) return false;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  // Form validation function
+  const validateEmployeeForm = () => {
+    const errors = {};
+
+    // Name validation
+    if (!editingEmployee.name?.trim()) {
+      errors.name = 'Name is required';
+    }
+
+    // Email validation
+    if (!editingEmployee.email?.trim()) {
+      errors.email = 'Email is required';
+    } else if (!validateEmail(editingEmployee.email)) {
+      errors.email = 'Please enter a valid email address';
+    }
+
+    // Phone validation
+    if (!editingEmployee.phone?.trim()) {
+      errors.phone = 'Phone number is required';
+    } else if (!validatePhone(editingEmployee.phone)) {
+      errors.phone = 'Please enter a valid phone number (10-15 digits)';
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  // Handle phone input with formatting
+  const handlePhoneChange = (value) => {
+    const formattedPhone = maskPhone(value);
+    setEditingEmployee(prev => ({
+      ...prev,
+      phone: formattedPhone
+    }));
+
+    // Clear phone error when user starts typing
+    if (formErrors.phone) {
+      setFormErrors(prev => ({
+        ...prev,
+        phone: undefined
+      }));
+    }
+  };
+
+  // Handle input changes with error clearing
+  const handleInputChange = (field, value) => {
+    setEditingEmployee(prev => ({
+      ...prev,
+      [field]: value
+    }));
+
+    // Clear field error when user starts typing
+    if (formErrors[field]) {
+      setFormErrors(prev => ({
+        ...prev,
+        [field]: undefined
+      }));
+    }
+  };
+
+  const handleSaveEmployee = async () => {
     setIsLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      const newEmployee = {
-        ...employeeData,
-        id: employees?.length + 1,
-        lastLogin: new Date()?.toISOString(),
-        assignedServices: availableServices?.filter(service => 
-          employeeData?.assignedServices?.includes(service?.id)
-        ),
-        recentActivity: [
-          { type: "login", description: "Account created", timestamp: new Date()?.toISOString() }
-        ]
-      };
-      
-      setEmployees(prev => [...prev, newEmployee]);
-      setIsAddModalOpen(false);
+      // Validate form before saving
+      if (!validateEmployeeForm()) {
+        setIsLoading(false);
+        return;
+      }
+
+      if (isAddingEmployee) {
+        // Add new employee
+        const employeeData = {
+          name: editingEmployee.name,
+          email: editingEmployee.email,
+          cellphone: editingEmployee.phone,
+          role: editingEmployee.role
+        };
+
+        const response = await makeAuthenticatedRequest('/api/employee/add', {
+          method: 'POST',
+          body: JSON.stringify(employeeData)
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+
+          // If we have assigned services, assign them to the employee
+          if (editingEmployee.assignedServices.length > 0) {
+            await makeAuthenticatedRequest('/api/company/employees/assign-work', {
+              method: 'POST',
+              body: JSON.stringify({
+                employeeId: result.id || result.employeeId,
+                workIds: editingEmployee.assignedServices
+              })
+            });
+          }
+
+          // Refresh employee list
+          await fetchEmployees();
+        } else if (response.status === 401) {
+          clearAuthData();
+          navigate('/', { replace: true });
+        }
+      } else {
+        // Update existing employee - we'll need to handle work assignments
+        if (editingEmployee.assignedServices.length > 0) {
+          const response = await makeAuthenticatedRequest('/api/company/employees/assign-work', {
+            method: 'POST',
+            body: JSON.stringify({
+              employeeId: editingEmployee.id,
+              workIds: editingEmployee.assignedServices
+            })
+          });
+
+          if (response.status === 401) {
+            clearAuthData();
+            navigate('/', { replace: true });
+            return;
+          }
+
+          // Refresh employee list
+          await fetchEmployees();
+        }
+      }
+
+      setEditingEmployee(null);
     } catch (error) {
-      console.error('Error adding employee:', error);
+      console.error('Error saving employee:', error);
+      // If it's an authentication error, redirect to login
+      if (error.message?.includes('Authentication expired')) {
+        navigate('/', { replace: true });
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleEmployeeView = (employee) => {
-    setSelectedEmployee(employee);
-    setIsDetailModalOpen(true);
+  const handleCancelEdit = () => {
+    setEditingEmployee(null);
   };
 
-  const handleEmployeeEdit = (employee) => {
-    setSelectedEmployee(employee);
-    setIsDetailModalOpen(false);
-    // In a real app, this would open an edit modal
-    console.log('Edit employee:', employee);
-  };
-
-  const handleServiceAssign = (employee) => {
-    setSelectedEmployee(employee);
-    setIsServiceModalOpen(true);
-  };
-
-  const handleServiceAssignmentSave = async (employeeId, assignedServices) => {
-    setIsLoading(true);
+  const handleToggleStatus = async (employee) => {
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setEmployees(prev => prev?.map(emp => 
-        emp?.id === employeeId 
-          ? { ...emp, assignedServices }
+      setIsLoading(true);
+      // Note: The API doesn't seem to have an endpoint to toggle employee status
+      // We would need to implement this on the backend
+      console.log('Toggle status for employee:', employee.id);
+
+      // For now, just update locally
+      setEmployees(prev => prev.map(emp =>
+        emp.id === employee.id
+          ? { ...emp, status: emp.status === 'active' ? 'inactive' : 'active' }
           : emp
       ));
-      
-      setIsServiceModalOpen(false);
     } catch (error) {
-      console.error('Error updating service assignments:', error);
+      console.error('Error toggling status:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleBulkAction = async (action, employeeIds) => {
-    setIsLoading(true);
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      if (action === 'activate' || action === 'deactivate') {
-        const newStatus = action === 'activate' ? 'active' : 'inactive';
-        setEmployees(prev => prev?.map(emp => 
-          employeeIds?.includes(emp?.id) 
-            ? { ...emp, status: newStatus }
-            : emp
-        ));
-      } else if (action === 'export') {
-        console.log('Exporting employees:', employeeIds);
-      }
-    } catch (error) {
-      console.error('Error performing bulk action:', error);
-    } finally {
-      setIsLoading(false);
-    }
+  const handleServiceToggle = (serviceId) => {
+    const currentServices = editingEmployee.assignedServices || [];
+    const newServices = currentServices.includes(serviceId)
+      ? currentServices.filter(id => id !== serviceId)
+      : [...currentServices, serviceId];
+
+    setEditingEmployee(prev => ({
+      ...prev,
+      assignedServices: newServices
+    }));
   };
 
-  const handleStatusToggle = async (employee) => {
-    const newStatus = employee?.status === 'active' ? 'inactive' : 'active';
-    setEmployees(prev => prev?.map(emp => 
-      emp?.id === employee?.id 
-        ? { ...emp, status: newStatus }
-        : emp
-    ));
+  const getAssignedServiceNames = (serviceIds) => {
+    return availableWorks
+      .filter(work => serviceIds.includes(work.id))
+      .map(work => work.name);
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -286,99 +351,283 @@ const EmployeeManagementScreen = () => {
         onToggleSidebar={handleToggleSidebar}
         isSidebarCollapsed={isSidebarCollapsed}
       />
+
       {/* Sidebar */}
       <AdminSidebar
         isCollapsed={isSidebarCollapsed}
         onToggle={handleToggleSidebar}
         user={user}
       />
+
       {/* Main Content */}
       <main className={`pt-16 transition-all duration-300 ${
         isSidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'
       }`}>
-        <div className="p-6">
-          {/* Page Header */}
-          <div className="flex items-center justify-between mb-8">
+        <div className="p-4 lg:p-6">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div>
-              <h1 className="text-3xl font-bold text-foreground">Employee Management</h1>
-              <p className="text-muted-foreground mt-2">
-                Manage your workforce, assign services, and track employee performance
+              <h1 className="text-2xl lg:text-3xl font-bold text-foreground">Employees</h1>
+              <p className="text-sm text-muted-foreground mt-1">
+                Manage employees and their services
               </p>
             </div>
             <Button
-              onClick={() => setIsAddModalOpen(true)}
+              onClick={handleAddEmployee}
               iconName="UserPlus"
               iconPosition="left"
-              className="shadow-soft"
+              className="w-full sm:w-auto"
             >
               Add Employee
             </Button>
           </div>
 
-          {/* Filters */}
-          <EmployeeFilters
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            statusFilter={statusFilter}
-            onStatusFilterChange={setStatusFilter}
-            serviceFilter={serviceFilter}
-            onServiceFilterChange={setServiceFilter}
-            dateRange={dateRange}
-            onDateRangeChange={setDateRange}
-            onClearFilters={handleClearFilters}
-            availableServices={availableServices}
-            resultCount={filteredEmployees?.length}
-            totalCount={employees?.length}
-          />
-
-          {/* Main Content Grid */}
-          <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
-            {/* Employee Table */}
-            <div className="xl:col-span-8">
-              <EmployeeTable
-                employees={filteredEmployees}
-                onEmployeeView={handleEmployeeView}
-                onEmployeeEdit={handleEmployeeEdit}
-                onServiceAssign={handleServiceAssign}
-                onBulkAction={handleBulkAction}
-                searchTerm={searchTerm}
-                statusFilter={statusFilter}
-                serviceFilter={serviceFilter}
-                sortConfig={sortConfig}
+          {/* Search and Filters */}
+          <div className="flex flex-col sm:flex-row gap-4 mb-6">
+            <div className="flex-1">
+              <Input
+                placeholder="Search employees..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                iconName="Search"
+                iconPosition="left"
               />
             </div>
+            <Select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="w-full sm:w-40"
+            >
+              <option value="all">All Status</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </Select>
+          </div>
 
-            {/* Summary Cards */}
-            <div className="xl:col-span-4">
-              <EmployeeSummaryCards employees={employees} />
+          {/* Statistics */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div className="bg-card rounded-lg p-4 border">
+              <div className="flex items-center gap-2">
+                <Icon name="Users" className="w-5 h-5 text-primary" />
+                <span className="text-sm text-muted-foreground">Total</span>
+              </div>
+              <p className="text-2xl font-bold mt-1">{employees.length}</p>
+            </div>
+            <div className="bg-card rounded-lg p-4 border">
+              <div className="flex items-center gap-2">
+                <Icon name="UserCheck" className="w-5 h-5 text-green-600" />
+                <span className="text-sm text-muted-foreground">Active</span>
+              </div>
+              <p className="text-2xl font-bold mt-1 text-green-600">
+                {employees.filter(e => e.status === 'active').length}
+              </p>
+            </div>
+            <div className="bg-card rounded-lg p-4 border">
+              <div className="flex items-center gap-2">
+                <Icon name="UserX" className="w-5 h-5 text-orange-600" />
+                <span className="text-sm text-muted-foreground">Inactive</span>
+              </div>
+              <p className="text-2xl font-bold mt-1 text-orange-600">
+                {employees.filter(e => e.status === 'inactive').length}
+              </p>
+            </div>
+            <div className="bg-card rounded-lg p-4 border">
+              <div className="flex items-center gap-2">
+                <Icon name="Wrench" className="w-5 h-5 text-blue-600" />
+                <span className="text-sm text-muted-foreground">Services</span>
+              </div>
+              <p className="text-2xl font-bold mt-1 text-blue-600">{availableWorks.length}</p>
+            </div>
+          </div>
+
+          {/* Employee Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {filteredEmployees.map(employee => (
+              <div key={employee.id} className="bg-card rounded-lg border p-4">
+                <div className="flex items-start gap-3">
+                  <img
+                    src={employee.pictureUrl}
+                    alt={employee.name}
+                    className="w-12 h-12 rounded-full object-cover"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-semibold text-foreground truncate">
+                        {employee.name}
+                      </h3>
+                      <div className="flex items-center gap-1">
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                          employee.status === 'active' 
+                            ? 'bg-green-100 text-green-700' 
+                            : 'bg-orange-100 text-orange-700'
+                        }`}>
+                          {employee.status}
+                        </span>
+                      </div>
+                    </div>
+                    <p className="text-sm text-muted-foreground capitalize">
+                      {employee.role}
+                    </p>
+                    <p className="text-sm text-muted-foreground truncate">
+                      {employee.email}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {employee.phone}
+                    </p>
+
+                    {/* Assigned Services */}
+                    <div className="mt-3">
+                      <p className="text-xs text-muted-foreground mb-1">Services:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {getAssignedServiceNames(employee.assignedServices).map(serviceName => (
+                          <span
+                            key={serviceName}
+                            className="px-2 py-1 text-xs bg-primary/10 text-primary rounded"
+                          >
+                            {serviceName}
+                          </span>
+                        ))}
+                        {employee.assignedServices.length === 0 && (
+                          <span className="text-xs text-muted-foreground">No services assigned</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex gap-2 mt-4">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleEditEmployee(employee)}
+                        iconName="Edit"
+                        className="flex-1"
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={employee.status === 'active' ? 'outline' : 'default'}
+                        onClick={() => handleToggleStatus(employee)}
+                        iconName={employee.status === 'active' ? 'UserX' : 'UserCheck'}
+                        className="flex-1"
+                        disabled={isLoading}
+                      >
+                        {employee.status === 'active' ? 'Deactivate' : 'Activate'}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {filteredEmployees.length === 0 && (
+            <div className="text-center py-12">
+              <Icon name="Users" className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-foreground mb-2">No employees found</h3>
+              <p className="text-muted-foreground mb-4">
+                {searchTerm || statusFilter !== 'all'
+                  ? 'Try adjusting your search or filters'
+                  : 'Get started by adding your first employee'
+                }
+              </p>
+              {!searchTerm && statusFilter === 'all' && (
+                <Button onClick={handleAddEmployee} iconName="UserPlus">
+                  Add Employee
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
+      </main>
+
+      {/* Employee Form Modal */}
+      {editingEmployee && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-card rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <h2 className="text-xl font-bold mb-4">
+              {isAddingEmployee ? 'Add Employee' : 'Edit Employee'}
+            </h2>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Name</label>
+                <Input
+                  value={editingEmployee.name}
+                  onChange={(e) => handleInputChange('name', e.target.value)}
+                  placeholder="Enter name"
+                  error={formErrors.name}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Email</label>
+                <Input
+                  type="email"
+                  value={editingEmployee.email}
+                  onChange={(e) => handleInputChange('email', e.target.value)}
+                  placeholder="Enter email"
+                  error={formErrors.email}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Phone</label>
+                <Input
+                  value={editingEmployee.phone}
+                  onChange={(e) => handlePhoneChange(e.target.value)}
+                  placeholder="Enter phone"
+                  error={formErrors.phone}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Assigned Services</label>
+                <div className="space-y-2 max-h-40 overflow-y-auto">
+                  {availableWorks.map(service => (
+                    <label key={service.id} className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={editingEmployee.assignedServices.includes(service.id)}
+                        onChange={() => handleServiceToggle(service.id)}
+                        className="rounded"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <span className="text-sm font-medium">{service.name}</span>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <span>${service.price}</span>
+                          <span>•</span>
+                          <span>{formatDuration(service.durationMinutes)}</span>
+                        </div>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-2 mt-6">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleCancelEdit}
+                className="flex-1"
+                disabled={isLoading}
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleSaveEmployee}
+                className="flex-1"
+                disabled={isLoading || !editingEmployee.name || !editingEmployee.email}
+              >
+                {isLoading ? 'Saving...' : 'Save'}
+              </Button>
             </div>
           </div>
         </div>
-      </main>
-      {/* Modals */}
-      <AddEmployeeModal
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        onSave={handleAddEmployee}
-        availableServices={availableServices}
-        isLoading={isLoading}
-      />
-      <EmployeeDetailModal
-        isOpen={isDetailModalOpen}
-        onClose={() => setIsDetailModalOpen(false)}
-        employee={selectedEmployee}
-        onEdit={handleEmployeeEdit}
-        onServiceAssign={handleServiceAssign}
-        onStatusToggle={handleStatusToggle}
-      />
-      <ServiceAssignmentModal
-        isOpen={isServiceModalOpen}
-        onClose={() => setIsServiceModalOpen(false)}
-        onSave={handleServiceAssignmentSave}
-        employee={selectedEmployee}
-        availableServices={availableServices}
-        isLoading={isLoading}
-      />
+      )}
     </div>
   );
 };
