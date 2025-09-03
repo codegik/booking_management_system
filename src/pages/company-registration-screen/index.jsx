@@ -283,7 +283,7 @@ const CompanyRegistrationScreen = () => {
                     iconName="Check"
                     iconPosition="right"
                   >
-                    Create Account
+                    Confirm
                   </Button>
                 </div>
               </div>
