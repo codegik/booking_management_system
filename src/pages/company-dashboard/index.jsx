@@ -8,58 +8,45 @@ import MetricsCard from './components/MetricsCard';
 import BookingCalendarWidget from './components/BookingCalendarWidget';
 import RecentActivityFeed from './components/RecentActivityFeed';
 import QuickActionsPanel from './components/QuickActionsPanel';
-import { clearAuthData } from '../../utils/auth';
+import { clearAuthData, makeAuthenticatedRequest } from '../../utils/auth';
 import useCompanyDetails from '../../utils/useCompanyDetails';
 
 const CompanyDashboard = () => {
   const navigate = useNavigate();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [bookingStatus, setBookingStatus] = useState(null);
+  const [dashboardMetrics, setDashboardMetrics] = useState([]);
+  const [metricsLoading, setMetricsLoading] = useState(false);
+  const [metricsError, setMetricsError] = useState(null);
   const { user, company, isLoading, error, fetchCompanyDetails } = useCompanyDetails();
 
-  // Mock dashboard metrics
-  const dashboardMetrics = [
-    {
-      title: "Today\'s Bookings",
-      value: "24",
-      change: "+12%",
-      changeType: "increase",
-      icon: "Calendar",
-      color: "primary",
-      linkTo: "/create-edit-booking-screen",
-      description: "5 pending approval"
-    },
-    {
-      title: "Active Employees",
-      value: "12",
-      change: "+2",
-      changeType: "increase",
-      icon: "Users",
-      color: "success",
-      linkTo: "/employee-management-screen",
-      description: "All available today"
-    },
-    {
-      title: "Total Customers",
-      value: "156",
-      change: "+8%",
-      changeType: "increase",
-      icon: "UserCheck",
-      color: "accent",
-      linkTo: "/customer-dashboard",
-      description: "23 new this month"
-    },
-    {
-      title: "Today\'s Revenue",
-      value: "$2,340",
-      change: "+15%",
-      changeType: "increase",
-      icon: "DollarSign",
-      color: "warning",
-      linkTo: "#",
-      description: "18 completed bookings"
+  // Fetch dashboard metrics from API
+  const fetchDashboardMetrics = async () => {
+    try {
+      setMetricsLoading(true);
+      setMetricsError(null);
+
+      const response = await makeAuthenticatedRequest('/api/company/dashboard', {
+        method: 'GET'
+      });
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          navigate('/');
+          return;
+        }
+        throw new Error('Failed to fetch dashboard metrics');
+      }
+
+      const data = await response.json();
+      setDashboardMetrics(data);
+    } catch (error) {
+      console.error('Failed to fetch dashboard metrics:', error);
+      setMetricsError(error.message || 'Failed to load dashboard metrics');
+    } finally {
+      setMetricsLoading(false);
     }
-  ];
+  };
 
   useEffect(() => {
     // Check authentication using the correct token key
@@ -73,7 +60,17 @@ const CompanyDashboard = () => {
 
     // Fetch company details from API
     fetchCompanyDetails();
+
+    // Fetch dashboard metrics
+    fetchDashboardMetrics();
   }, [navigate, fetchCompanyDetails]);
+
+  useEffect(() => {
+    // Fetch dashboard metrics when company details are successfully fetched
+    if (!isLoading && company) {
+      fetchDashboardMetrics();
+    }
+  }, [isLoading, company]);
 
   const handleSidebarToggle = () => {
     setIsSidebarCollapsed(!isSidebarCollapsed);
@@ -129,6 +126,35 @@ const CompanyDashboard = () => {
                   <p className="text-sm text-muted-foreground mt-1">{error}</p>
                   <button
                     onClick={fetchCompanyDetails}
+                    className="mt-3 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+                  >
+                    Retry
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Metrics Loading State */}
+          {metricsLoading && (
+            <div className="flex items-center justify-center min-h-96">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                <p className="text-muted-foreground">Loading dashboard metrics...</p>
+              </div>
+            </div>
+          )}
+
+          {/* Metrics Error State */}
+          {metricsError && !metricsLoading && (
+            <div className="bg-error/10 border border-error/20 rounded-lg p-6 mb-6">
+              <div className="flex items-center space-x-3">
+                <Icon name="AlertCircle" size={20} className="text-error" />
+                <div>
+                  <h3 className="text-lg font-semibold text-error">Failed to load dashboard metrics</h3>
+                  <p className="text-sm text-muted-foreground mt-1">{metricsError}</p>
+                  <button
+                    onClick={fetchDashboardMetrics}
                     className="mt-3 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
                   >
                     Retry

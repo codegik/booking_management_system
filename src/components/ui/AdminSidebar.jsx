@@ -1,13 +1,11 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import {Link, useLocation} from 'react-router-dom';
 import Icon from '../AppIcon';
 import Button from './Button';
 
 const AdminSidebar = ({ 
   isCollapsed = false, 
   onToggle = () => {},
-  user = { role: 'admin', name: 'John Doe' },
-  className = ''
 }) => {
   const location = useLocation();
 
@@ -42,16 +40,12 @@ const AdminSidebar = ({
     return location?.pathname === path;
   };
 
-  if (user?.role !== 'admin') {
-    return null;
-  }
-
   return (
     <>
       {/* Desktop Sidebar */}
       <aside className={`hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-40 lg:flex lg:flex-col ${
         isCollapsed ? 'lg:w-16' : 'lg:w-64'
-      } bg-card border-r border-border transition-all duration-300 ease-in-out ${className}`}>
+      } bg-card border-r border-border transition-all duration-300 ease-in-out`}>
         
         {/* Sidebar Header */}
         <div className="flex items-center justify-between h-16 px-4 border-b border-border">

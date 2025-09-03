@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {useNavigate} from 'react-router-dom';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
@@ -28,6 +28,21 @@ const SocialLoginScreen = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const { isGoogleLoaded, isFedCMSupported, signInWithGoogle } = useGoogleAuth();
+
+  // Check if user is already authenticated and registered on component mount
+  useEffect(() => {
+    const token = localStorage.getItem('jwtToken');
+    const isAuthenticated = localStorage.getItem('isAuthenticated');
+
+    if (token && isAuthenticated === 'true') {
+      // User is already authenticated, check if company is registered
+      if (isCompanyRegistered()) {
+        navigate('/company-dashboard');
+      } else {
+        navigate('/company-registration-screen');
+      }
+    }
+  }, [navigate]);
 
   const handleGoogleLogin = async () => {
     setIsLoading(true);
