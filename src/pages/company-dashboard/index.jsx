@@ -16,9 +16,6 @@ const CompanyDashboard = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [bookingStatus, setBookingStatus] = useState(null);
   const { user, company, isLoading, error, fetchCompanyDetails } = useCompanyDetails();
-  const notifications = {
-    count: 3
-  };
 
   // Mock dashboard metrics
   const dashboardMetrics = [
@@ -97,7 +94,6 @@ const CompanyDashboard = () => {
       <RoleBasedHeader
         user={user}
         company={company}
-        notifications={notifications}
         onLogout={handleLogout}
         onToggleSidebar={handleSidebarToggle}
         isSidebarCollapsed={isSidebarCollapsed}
@@ -148,11 +144,8 @@ const CompanyDashboard = () => {
               {/* Welcome Section */}
               <div className="mb-8">
                 <h1 className="text-3xl font-bold text-foreground mb-2">
-                  Welcome back, {user?.name || 'Admin User'}
+                    Here's what's happening with your business today.
                 </h1>
-                <p className="text-muted-foreground">
-                  Here's what's happening with your business today.
-                </p>
               </div>
 
               {/* Metrics Cards */}
