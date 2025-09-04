@@ -89,12 +89,12 @@ const EmployeeManagementScreen = () => {
       if (response.ok) {
         const works = await response.json();
         const transformedWorks = works
-          .filter(work => work.isActive)
           .map(work => ({
             id: work.id,
             name: work.name,
             price: work.price / 100,
-            durationMinutes: work.durationMinutes
+            durationMinutes: work.durationMinutes,
+            isActive: work.isActive
           }));
         setAvailableWorks(transformedWorks);
       }
@@ -202,15 +202,28 @@ const EmployeeManagementScreen = () => {
 
   const handleToggleStatus = async (employee) => {
     try {
-      console.log('Toggle status for employee:', employee.id);
-      // For now, just update locally since API doesn't have this endpoint
-      setEmployees(prev => prev.map(emp =>
-        emp.id === employee.id
-          ? { ...emp, status: emp.status === 'active' ? 'inactive' : 'active' }
-          : emp
-      ));
+      setIsLoading(true);
+      setError(null);
+
+      const endpoint = employee.status === 'active'
+        ? `/api/company/employees/${employee.id}/inactivate`
+        : `/api/company/employees/${employee.id}/activate`;
+
+      const response = await makeAuthenticatedRequest(endpoint, {
+        method: 'PUT'
+      });
+
+      if (response.ok) {
+        // Refresh employees list to get updated data
+        await fetchEmployees();
+      } else {
+        throw new Error(`Failed to ${employee.status === 'active' ? 'deactivate' : 'activate'} employee`);
+      }
     } catch (error) {
-      console.error('Error toggling status:', error);
+      console.error('Error toggling employee status:', error);
+      setError(error.message || `Failed to ${employee.status === 'active' ? 'deactivate' : 'activate'} employee`);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -270,7 +283,17 @@ const EmployeeManagementScreen = () => {
   const getAssignedServiceNames = (serviceIds) => {
     return availableWorks
       .filter(work => serviceIds.includes(work.id))
-      .map(work => ({ id: work.id, name: work.name }));
+      .map(work => ({
+        id: work.id,
+        name: work.name,
+        isActive: work.isActive
+      }))
+      .sort((a, b) => {
+        // Sort active services first, then inactive
+        if (a.isActive && !b.isActive) return -1;
+        if (!a.isActive && b.isActive) return 1;
+        return 0; // Keep original order for services with same status
+      });
   };
 
   const handleLogout = () => {
@@ -444,17 +467,38 @@ const EmployeeManagementScreen = () => {
                     Assigned Services
                   </label>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-40 overflow-y-auto">
-                    {availableWorks.map(service => (
-                      <label key={service.id} className="flex items-center gap-2 p-2 border rounded">
+                    {availableWorks
+                      .sort((a, b) => {
+                        // Sort active services first, then inactive
+                        if (a.isActive && !b.isActive) return -1;
+                        if (!a.isActive && b.isActive) return 1;
+                        return 0; // Keep original order for services with same status
+                      })
+                      .map(service => (
+                      <label key={service.id} className={`flex items-center gap-2 p-2 border rounded ${
+                        !service.isActive ? 'bg-gray-50 border-gray-300' : ''
+                      }`}>
                         <input
                           type="checkbox"
                           checked={formData.assignedWorks.includes(service.id)}
                           onChange={() => handleServiceToggle(service.id)}
                           className="rounded"
+                          disabled={!service.isActive}
                         />
                         <div className="flex-1 min-w-0">
-                          <span className="text-sm font-medium">{service.name}</span>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <div className="flex items-center gap-2">
+                            <span className={`text-sm font-medium ${
+                              service.isActive ? '' : 'text-gray-500 line-through'
+                            }`}>
+                              {service.name}
+                            </span>
+                            {!service.isActive && (
+                              <Icon name="AlertTriangle" size={14} className="text-orange-500" />
+                            )}
+                          </div>
+                          <div className={`flex items-center gap-2 text-xs ${
+                            service.isActive ? 'text-muted-foreground' : 'text-gray-400'
+                          }`}>
                             <span>${service.price}</span>
                             <span>•</span>
                             <span>{formatDuration(service.durationMinutes)}</span>
@@ -528,8 +572,16 @@ const EmployeeManagementScreen = () => {
                           {getAssignedServiceNames(employee.assignedWorks).map(service => (
                             <span
                               key={service.id}
-                              className="px-2 py-1 text-xs bg-primary/10 text-primary rounded"
+                              className={`px-2 py-1 text-xs rounded flex items-center gap-1 ${
+                                service.isActive
+                                  ? 'bg-gray-100 text-primary'
+                                  : 'bg-gray-100 text-gray-500 line-through'
+                              }`}
+                              title={service.isActive ? 'Active service' : 'Inactive service'}
                             >
+                              {!service.isActive && (
+                                <Icon name="AlertTriangle" size={12} className="text-orange-500" />
+                              )}
                               {service.name}
                             </span>
                           ))}
