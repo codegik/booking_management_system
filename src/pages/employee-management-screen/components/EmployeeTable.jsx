@@ -25,7 +25,7 @@ const EmployeeTable = ({
                            employee?.email?.toLowerCase()?.includes(searchTerm?.toLowerCase());
       const matchesStatus = statusFilter === 'all' || employee?.status === statusFilter;
       const matchesService = serviceFilter === 'all' || 
-                            employee?.assignedServices?.some(service => service?.id === serviceFilter);
+                            employee?.assignedWorks?.some(service => service?.id === serviceFilter);
       
       return matchesSearch && matchesStatus && matchesService;
     });
@@ -35,9 +35,9 @@ const EmployeeTable = ({
         let aValue = a?.[sortBy?.key];
         let bValue = b?.[sortBy?.key];
         
-        if (sortBy?.key === 'assignedServices') {
-          aValue = a?.assignedServices?.length;
-          bValue = b?.assignedServices?.length;
+        if (sortBy?.key === 'assignedWorks') {
+          aValue = a?.assignedWorks?.length;
+          bValue = b?.assignedWorks?.length;
         } else if (sortBy?.key === 'lastLogin') {
           aValue = new Date(a.lastLogin);
           bValue = new Date(b.lastLogin);
@@ -157,11 +157,11 @@ const EmployeeTable = ({
               </th>
               <th className="px-6 py-4 text-left">
                 <button
-                  onClick={() => handleSort('assignedServices')}
+                  onClick={() => handleSort('assignedWorks')}
                   className="flex items-center space-x-2 text-sm font-medium text-foreground hover:text-primary transition-smooth"
                 >
                   <span>Assigned Services</span>
-                  <Icon name={getSortIcon('assignedServices')} size={14} />
+                  <Icon name={getSortIcon('assignedWorks')} size={14} />
                 </button>
               </th>
               <th className="px-6 py-4 text-left">
@@ -216,7 +216,7 @@ const EmployeeTable = ({
                 </td>
                 <td className="px-6 py-4">
                   <div className="flex flex-wrap gap-1">
-                    {employee?.assignedServices?.slice(0, 2)?.map((service) => (
+                    {employee?.assignedWorks?.slice(0, 2)?.map((service) => (
                       <span
                         key={service?.id}
                         className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-accent/20 text-accent"
@@ -224,9 +224,9 @@ const EmployeeTable = ({
                         {service?.name}
                       </span>
                     ))}
-                    {employee?.assignedServices?.length > 2 && (
+                    {employee?.assignedWorks?.length > 2 && (
                       <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-muted text-muted-foreground">
-                        +{employee?.assignedServices?.length - 2} more
+                        +{employee?.assignedWorks?.length - 2} more
                       </span>
                     )}
                   </div>
@@ -315,7 +315,7 @@ const EmployeeTable = ({
               </div>
               <div className="flex justify-between">
                 <span className="text-xs text-muted-foreground">Services:</span>
-                <span className="text-xs font-medium">{employee?.assignedServices?.length}</span>
+                <span className="text-xs font-medium">{employee?.assignedWorks?.length}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-xs text-muted-foreground">Last Login:</span>

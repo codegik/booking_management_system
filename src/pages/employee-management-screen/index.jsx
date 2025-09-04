@@ -44,7 +44,7 @@ const EmployeeManagementScreen = () => {
     name: '',
     email: '',
     phone: '',
-    assignedServices: []
+    assignedWorks: []
   });
 
   // Fetch employees from API
@@ -56,14 +56,14 @@ const EmployeeManagementScreen = () => {
       const response = await makeAuthenticatedRequest('/api/company/employees/work-assignments');
 
       if (response.ok) {
-        const employeeAssignments = await response.json();
-        const transformedEmployees = employeeAssignments.map((assignment, index) => ({
-          id: assignment.employeeId || `employee-${index}`,
-          name: assignment.employee?.name,
-          email: assignment.employee?.email,
-          phone: assignment.employee?.cellphone,
-          status: assignment.employee?.isActive ? 'active' : 'inactive',
-          assignedServices: assignment.assignedWorks?.map((work, workIndex) => work.id || `work-${workIndex}`) || []
+        const employees = await response.json();
+        const transformedEmployees = employees.map((employee, index) => ({
+          id: employee.id,
+          name: employee.name,
+          email: employee.email,
+          phone: employee.cellphone,
+          status: employee.isActive ? 'active' : 'inactive',
+          assignedWorks: employee.assignedWorks?.map((work) => work.id) || []
         }));
         setEmployees(transformedEmployees);
       } else if (response.status === 401) {
@@ -154,24 +154,35 @@ const EmployeeManagementScreen = () => {
         name: formData.name,
         email: formData.email,
         cellphone: formData.phone,
-        assignedServices: formData.assignedServices || []
+        assignedWorks: formData.assignedWorks || []
       };
 
-      const response = await makeAuthenticatedRequest('/api/employee/add', {
-        method: 'POST',
-        body: JSON.stringify(employeeData)
-      });
+      let response;
+
+      if (editingEmployee) {
+        // Update existing employee
+        response = await makeAuthenticatedRequest(`/api/employee/${editingEmployee.id}`, {
+          method: 'PUT',
+          body: JSON.stringify(employeeData)
+        });
+      } else {
+        // Add new employee
+        response = await makeAuthenticatedRequest('/api/employee/add', {
+          method: 'POST',
+          body: JSON.stringify(employeeData)
+        });
+      }
 
       if (response.ok) {
         await fetchEmployees();
         handleCancelForm();
         setError(null);
       } else {
-        throw new Error('Failed to save employee');
+        throw new Error(`Failed to ${editingEmployee ? 'update' : 'save'} employee`);
       }
     } catch (error) {
-      console.error('Error saving employee:', error);
-      setError(error.message || 'Failed to save employee');
+      console.error(`Error ${editingEmployee ? 'updating' : 'saving'} employee:`, error);
+      setError(error.message || `Failed to ${editingEmployee ? 'update' : 'save'} employee`);
     } finally {
       setIsLoading(false);
     }
@@ -183,7 +194,7 @@ const EmployeeManagementScreen = () => {
       name: employee.name,
       email: employee.email,
       phone: employee.phone,
-      assignedServices: employee.assignedServices || []
+      assignedWorks: employee.assignedWorks || []
     });
     setFormErrors({});
     setShowAddForm(true);
@@ -210,20 +221,20 @@ const EmployeeManagementScreen = () => {
       name: '',
       email: '',
       phone: '',
-      assignedServices: []
+      assignedWorks: []
     });
     setFormErrors({});
   };
 
   const handleServiceToggle = (serviceId) => {
-    const currentServices = formData.assignedServices || [];
+    const currentServices = formData.assignedWorks || [];
     const newServices = currentServices.includes(serviceId)
       ? currentServices.filter(id => id !== serviceId)
       : [...currentServices, serviceId];
 
     setFormData(prev => ({
       ...prev,
-      assignedServices: newServices
+      assignedWorks: newServices
     }));
   };
 
@@ -336,42 +347,6 @@ const EmployeeManagementScreen = () => {
             </div>
           </div>
 
-          {/* Statistics */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <div className="bg-card rounded-lg p-4 border">
-              <div className="flex items-center gap-2">
-                <Icon name="Users" className="w-5 h-5 text-primary" />
-                <span className="text-sm text-muted-foreground">Total</span>
-              </div>
-              <p className="text-2xl font-bold mt-1">{employees.length}</p>
-            </div>
-            <div className="bg-card rounded-lg p-4 border">
-              <div className="flex items-center gap-2">
-                <Icon name="UserCheck" className="w-5 h-5 text-green-600" />
-                <span className="text-sm text-muted-foreground">Active</span>
-              </div>
-              <p className="text-2xl font-bold mt-1 text-green-600">
-                {employees.filter(e => e.status === 'active').length}
-              </p>
-            </div>
-            <div className="bg-card rounded-lg p-4 border">
-              <div className="flex items-center gap-2">
-                <Icon name="UserX" className="w-5 h-5 text-orange-600" />
-                <span className="text-sm text-muted-foreground">Inactive</span>
-              </div>
-              <p className="text-2xl font-bold mt-1 text-orange-600">
-                {employees.filter(e => e.status === 'inactive').length}
-              </p>
-            </div>
-            <div className="bg-card rounded-lg p-4 border">
-              <div className="flex items-center gap-2">
-                <Icon name="Wrench" className="w-5 h-5 text-blue-600" />
-                <span className="text-sm text-muted-foreground">Services</span>
-              </div>
-              <p className="text-2xl font-bold mt-1 text-blue-600">{availableWorks.length}</p>
-            </div>
-          </div>
-
           {/* Filter and Search Section */}
           <div className="mb-6 space-y-4">
             {/* Filter Buttons */}
@@ -381,24 +356,30 @@ const EmployeeManagementScreen = () => {
                 size="xs"
                 onClick={() => setFilterStatus('all')}
                 className="text-xs px-2 py-1 h-7"
+                iconName="Users"
+                iconPosition="left"
               >
-                All
+                All ({employees.length})
               </Button>
               <Button
                 variant={filterStatus === 'active' ? 'default' : 'outline'}
                 size="xs"
                 onClick={() => setFilterStatus('active')}
                 className="text-xs px-2 py-1 h-7"
+                iconName="UserCheck"
+                iconPosition="left"
               >
-                Active
+                Active ({employees.filter(e => e.status === 'active').length})
               </Button>
               <Button
                 variant={filterStatus === 'inactive' ? 'default' : 'outline'}
                 size="xs"
                 onClick={() => setFilterStatus('inactive')}
                 className="text-xs px-2 py-1 h-7"
+                iconName="UserX"
+                iconPosition="left"
               >
-                Inactive
+                Inactive ({employees.filter(e => e.status === 'inactive').length})
               </Button>
             </div>
 
@@ -467,7 +448,7 @@ const EmployeeManagementScreen = () => {
                       <label key={service.id} className="flex items-center gap-2 p-2 border rounded">
                         <input
                           type="checkbox"
-                          checked={formData.assignedServices.includes(service.id)}
+                          checked={formData.assignedWorks.includes(service.id)}
                           onChange={() => handleServiceToggle(service.id)}
                           className="rounded"
                         />
@@ -483,20 +464,24 @@ const EmployeeManagementScreen = () => {
                     ))}
                   </div>
                 </div>
-                <div className="flex gap-2 pt-2">
+                <div className="flex flex-wrap gap-1 sm:gap-2">
+                  <Button
+                    type="submit"
+                    loading={isLoading}
+                    size="xs"
+                    className="text-xs px-2 py-1 h-7"
+                  >
+                    {editingEmployee ? 'Update' : 'Add'}
+                  </Button>
                   <Button
                     type="button"
                     variant="outline"
                     onClick={handleCancelForm}
                     disabled={isLoading}
+                    size="xs"
+                    className="text-xs px-2 py-1 h-7"
                   >
                     Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? 'Saving...' : (editingEmployee ? 'Update' : 'Add')}
                   </Button>
                 </div>
               </form>
@@ -540,7 +525,7 @@ const EmployeeManagementScreen = () => {
                         <p>{employee.email}</p>
                         <p>{employee.phone}</p>
                         <div className="flex flex-wrap gap-1 mt-2">
-                          {getAssignedServiceNames(employee.assignedServices).map(service => (
+                          {getAssignedServiceNames(employee.assignedWorks).map(service => (
                             <span
                               key={service.id}
                               className="px-2 py-1 text-xs bg-primary/10 text-primary rounded"
@@ -548,7 +533,7 @@ const EmployeeManagementScreen = () => {
                               {service.name}
                             </span>
                           ))}
-                          {employee.assignedServices.length === 0 && (
+                          {employee.assignedWorks.length === 0 && (
                             <span className="text-xs text-muted-foreground">No services assigned</span>
                           )}
                         </div>

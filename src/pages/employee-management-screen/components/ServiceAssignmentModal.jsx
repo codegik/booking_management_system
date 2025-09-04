@@ -18,7 +18,7 @@ const ServiceAssignmentModal = ({
 
   useEffect(() => {
     if (employee && isOpen) {
-      setSelectedServices(employee?.assignedServices?.map(service => service?.id));
+      setSelectedServices(employee?.assignedWorks?.map(service => service?.id));
     }
   }, [employee, isOpen]);
 
@@ -66,17 +66,17 @@ const ServiceAssignmentModal = ({
   };
 
   const handleSave = () => {
-    const assignedServices = availableServices?.filter(service => 
+    const assignedWorks = availableServices?.filter(service =>
       selectedServices?.includes(service?.id)
     );
-    onSave(employee?.id, assignedServices);
+    onSave(employee?.id, assignedWorks);
   };
 
-  const assignedServices = availableServices?.filter(service => 
+  const assignedWorks = availableServices?.filter(service =>
     selectedServices?.includes(service?.id)
   );
 
-  const unassignedServices = filteredServices?.filter(service => 
+  const unassignedWorks = filteredServices?.filter(service =>
     !selectedServices?.includes(service?.id)
   );
 
@@ -135,7 +135,7 @@ const ServiceAssignmentModal = ({
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-medium text-foreground">Available Services</h3>
                   <span className="text-sm text-muted-foreground">
-                    {unassignedServices?.length} services
+                    {unassignedWorks?.length} services
                   </span>
                 </div>
                 
@@ -144,7 +144,7 @@ const ServiceAssignmentModal = ({
                   onDragOver={handleDragOver}
                   onDrop={(e) => handleDrop(e, 'available')}
                 >
-                  {unassignedServices?.map((service) => (
+                  {unassignedWorks?.map((service) => (
                     <div
                       key={service?.id}
                       draggable
@@ -169,7 +169,7 @@ const ServiceAssignmentModal = ({
                     </div>
                   ))}
                   
-                  {unassignedServices?.length === 0 && (
+                  {unassignedWorks?.length === 0 && (
                     <div className="text-center py-8">
                       <Icon name="CheckCircle" size={32} className="mx-auto text-success mb-2" />
                       <p className="text-sm text-muted-foreground">
@@ -185,7 +185,7 @@ const ServiceAssignmentModal = ({
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-medium text-foreground">Services</h3>
                   <span className="text-sm text-muted-foreground">
-                    {assignedServices?.length} services
+                    {assignedWorks?.length} services
                   </span>
                 </div>
                 
@@ -194,7 +194,7 @@ const ServiceAssignmentModal = ({
                   onDragOver={handleDragOver}
                   onDrop={(e) => handleDrop(e, 'assigned')}
                 >
-                  {assignedServices?.map((service) => (
+                  {assignedWorks?.map((service) => (
                     <div
                       key={service?.id}
                       draggable
@@ -219,7 +219,7 @@ const ServiceAssignmentModal = ({
                     </div>
                   ))}
                   
-                  {assignedServices?.length === 0 && (
+                  {assignedWorks?.length === 0 && (
                     <div className="text-center py-8 border-2 border-dashed border-muted rounded-lg">
                       <Icon name="Settings" size={32} className="mx-auto text-muted-foreground mb-2" />
                       <p className="text-sm text-muted-foreground mb-2">

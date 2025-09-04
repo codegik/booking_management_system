@@ -155,7 +155,7 @@ const EmployeeDetailModal = ({
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-muted-foreground">Services:</span>
                         <span className="text-sm font-medium text-foreground">
-                          {employee?.assignedServices?.length} assigned
+                          {employee?.assignedWorks?.length} assigned
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
@@ -197,9 +197,9 @@ const EmployeeDetailModal = ({
                   </Button>
                 </div>
 
-                {employee?.assignedServices?.length > 0 ? (
+                {employee?.assignedWorks?.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {employee?.assignedServices?.map((service) => (
+                    {employee?.assignedWorks?.map((service) => (
                       <div key={service?.id} className="bg-muted/30 rounded-lg p-4 border border-border">
                         <div className="flex items-start justify-between mb-2">
                           <h4 className="font-medium text-foreground">{service?.name}</h4>

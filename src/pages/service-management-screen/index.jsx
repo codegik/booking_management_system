@@ -274,24 +274,30 @@ const ServiceManagementScreen = () => {
                 size="xs"
                 onClick={() => setFilterStatus('all')}
                 className="text-xs px-2 py-1 h-7"
+                iconName="Wrench"
+                iconPosition="left"
               >
-                All
+                All ({services.length})
               </Button>
               <Button
                 variant={filterStatus === 'active' ? 'default' : 'outline'}
                 size="xs"
                 onClick={() => setFilterStatus('active')}
                 className="text-xs px-2 py-1 h-7"
+                iconName="CheckCircle"
+                iconPosition="left"
               >
-                Active
+                Active ({services.filter(s => s.isActive).length})
               </Button>
               <Button
                 variant={filterStatus === 'inactive' ? 'default' : 'outline'}
                 size="xs"
                 onClick={() => setFilterStatus('inactive')}
                 className="text-xs px-2 py-1 h-7"
+                iconName="XCircle"
+                iconPosition="left"
               >
-                Inactive
+                Inactive ({services.filter(s => !s.isActive).length})
               </Button>
             </div>
 
@@ -440,6 +446,8 @@ const ServiceManagementScreen = () => {
                         onClick={() => handleEdit(service)}
                         disabled={isLoading}
                         className="text-xs px-2 py-1 h-7"
+                        iconName="Edit"
+                        iconPosition="left"
                       >
                         Edit
                       </Button>
@@ -450,6 +458,8 @@ const ServiceManagementScreen = () => {
                           onClick={() => handleDeactivate(service.id)}
                           disabled={isLoading}
                           className="text-xs px-2 py-1 h-7"
+                          iconName="Power"
+                          iconPosition="left"
                         >
                           Deactivate
                         </Button>

@@ -8,7 +8,7 @@ const EmployeeSummaryCards = ({ employees = [] }) => {
   
   // Calculate service assignment distribution
   const serviceAssignments = employees?.reduce((acc, emp) => {
-    emp?.assignedServices?.forEach(service => {
+    emp?.assignedWorks?.forEach(service => {
       acc[service.name] = (acc?.[service?.name] || 0) + 1;
     });
     return acc;
@@ -124,7 +124,7 @@ const EmployeeSummaryCards = ({ employees = [] }) => {
             <span className="text-sm text-muted-foreground">Avg. Services per Employee</span>
             <span className="text-sm font-medium text-foreground">
               {totalEmployees > 0 
-                ? (employees?.reduce((sum, emp) => sum + emp?.assignedServices?.length, 0) / totalEmployees)?.toFixed(1)
+                ? (employees?.reduce((sum, emp) => sum + emp?.assignedWorks?.length, 0) / totalEmployees)?.toFixed(1)
                 : '0'
               }
             </span>
@@ -144,7 +144,7 @@ const EmployeeSummaryCards = ({ employees = [] }) => {
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">Unassigned Employees</span>
             <span className="text-sm font-medium text-foreground">
-              {employees?.filter(emp => emp?.assignedServices?.length === 0)?.length}
+              {employees?.filter(emp => emp?.assignedWorks?.length === 0)?.length}
             </span>
           </div>
         </div>

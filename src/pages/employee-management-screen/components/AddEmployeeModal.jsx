@@ -18,7 +18,7 @@ const AddEmployeeModal = ({
     phone: '',
     role: 'technician',
     status: 'active',
-    assignedServices: [],
+    assignedWorks: [],
     pictureUrl: ''
   });
 
@@ -46,9 +46,9 @@ const AddEmployeeModal = ({
   const handleServiceToggle = (serviceId, checked) => {
     setFormData(prev => ({
       ...prev,
-      assignedServices: checked
-        ? [...prev?.assignedServices, serviceId]
-        : prev?.assignedServices?.filter(id => id !== serviceId)
+      assignedWorks: checked
+        ? [...prev?.assignedWorks, serviceId]
+        : prev?.assignedWorks?.filter(id => id !== serviceId)
     }));
   };
 
@@ -100,7 +100,7 @@ const AddEmployeeModal = ({
       phone: '',
       role: 'technician',
       status: 'active',
-      assignedServices: [],
+      assignedWorks: [],
       pictureUrl: ''
     });
     setErrors({});
@@ -224,7 +224,7 @@ const AddEmployeeModal = ({
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-medium text-foreground">Service Assignment</h3>
                   <span className="text-sm text-muted-foreground">
-                    {formData?.assignedServices?.length} of {availableServices?.length} selected
+                    {formData?.assignedWorks?.length} of {availableServices?.length} selected
                   </span>
                 </div>
                 
@@ -233,7 +233,7 @@ const AddEmployeeModal = ({
                     {availableServices?.map((service) => (
                       <div key={service?.id} className="flex items-start space-x-3 p-2 rounded hover:bg-muted/50">
                         <Checkbox
-                          checked={formData?.assignedServices?.includes(service?.id)}
+                          checked={formData?.assignedWorks?.includes(service?.id)}
                           onChange={(e) => handleServiceToggle(service?.id, e?.target?.checked)}
                         />
                         <div className="flex-1 min-w-0">
