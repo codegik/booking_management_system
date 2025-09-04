@@ -341,7 +341,7 @@ const ServiceManagementScreen = () => {
                   />
                 </div>
                 <Input
-                  label="Price (cents)"
+                  label="Price"
                   type="number"
                   placeholder="5000"
                   value={formData.price}

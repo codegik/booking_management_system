@@ -183,7 +183,7 @@ const ServiceAssignmentModal = ({
               {/* Assigned Services */}
               <div className="p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-medium text-foreground">Assigned Services</h3>
+                  <h3 className="text-lg font-medium text-foreground">Services</h3>
                   <span className="text-sm text-muted-foreground">
                     {assignedServices?.length} services
                   </span>

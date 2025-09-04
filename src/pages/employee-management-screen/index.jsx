@@ -14,18 +14,18 @@ const EmployeeManagementScreen = () => {
   const navigate = useNavigate();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [isAddingEmployee, setIsAddingEmployee] = useState(false);
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [showAddForm, setShowAddForm] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [employees, setEmployees] = useState([]);
   const [availableWorks, setAvailableWorks] = useState([]);
   const [formErrors, setFormErrors] = useState({});
+  const [error, setError] = useState(null);
 
   const { user, company, fetchCompanyDetails } = useCompanyDetails();
-  const notifications = { count: 0 };
 
-  // Helper function to convert minutes to hour:minute format (same as service-management-screen)
+  // Helper function to convert minutes to hour:minute format
   const formatDuration = (minutes) => {
     const hours = Math.floor(minutes / 60);
     const remainingMinutes = minutes % 60;
@@ -39,36 +39,40 @@ const EmployeeManagementScreen = () => {
     }
   };
 
+  // Form state
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    assignedServices: []
+  });
+
   // Fetch employees from API
   const fetchEmployees = async () => {
     try {
       setIsLoading(true);
+      setError(null);
 
-      // Use the authenticated request utility
       const response = await makeAuthenticatedRequest('/api/company/employees/work-assignments');
 
       if (response.ok) {
         const employeeAssignments = await response.json();
-
-        // Transform the data to match our component structure
-        const transformedEmployees = employeeAssignments.map(assignment => ({
-          id: assignment.employee.id,
-          name: assignment.employee.name || 'Unknown',
-          email: assignment.employee.email || '',
-          cellphone: assignment.employee.cellphone || '',
-          status: assignment.employee.isActive ? 'active' : 'inactive',
-          assignedServices: assignment.assignedWorks?.map(work => work.id) || []
+        const transformedEmployees = employeeAssignments.map((assignment, index) => ({
+          id: assignment.employeeId || `employee-${index}`,
+          name: assignment.employee?.name,
+          email: assignment.employee?.email,
+          phone: assignment.employee?.cellphone,
+          status: assignment.employee?.isActive ? 'active' : 'inactive',
+          assignedServices: assignment.assignedWorks?.map((work, workIndex) => work.id || `work-${workIndex}`) || []
         }));
-
         setEmployees(transformedEmployees);
       } else if (response.status === 401) {
-        // Clear auth data and redirect to login
         clearAuthData();
         navigate('/', { replace: true });
       }
     } catch (error) {
       console.error('Error fetching employees:', error);
-      // If it's an authentication error, redirect to login
+      setError('Failed to load employees');
       if (error.message?.includes('Authentication expired')) {
         navigate('/', { replace: true });
       }
@@ -80,28 +84,22 @@ const EmployeeManagementScreen = () => {
   // Fetch available works/services from API
   const fetchAvailableWorks = async () => {
     try {
-      const response = await makeAuthenticatedRequest('/api/work/all?inactive=false');
+      const response = await makeAuthenticatedRequest('/api/work/all');
 
       if (response.ok) {
         const works = await response.json();
-        const transformedWorks = works.map(work => ({
-          id: work.id,
-          name: work.name,
-          price: work.price / 100, // Convert from cents to dollars
-          durationMinutes: work.durationMinutes
-        }));
+        const transformedWorks = works
+          .filter(work => work.isActive)
+          .map(work => ({
+            id: work.id,
+            name: work.name,
+            price: work.price / 100,
+            durationMinutes: work.durationMinutes
+          }));
         setAvailableWorks(transformedWorks);
-      } else if (response.status === 401) {
-        // Clear auth data and redirect to login
-        clearAuthData();
-        navigate('/', { replace: true });
       }
     } catch (error) {
       console.error('Error fetching works:', error);
-      // If it's an authentication error, redirect to login
-      if (error.message?.includes('Authentication expired')) {
-        navigate('/', { replace: true });
-      }
     }
   };
 
@@ -110,38 +108,6 @@ const EmployeeManagementScreen = () => {
     fetchEmployees();
     fetchAvailableWorks();
   }, [fetchCompanyDetails]);
-
-  // Filter employees
-  const filteredEmployees = employees.filter(employee => {
-    const matchesSearch = employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         employee.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || employee.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
-
-  const handleLogout = () => {
-    console.log('Logging out...');
-  };
-
-  const handleToggleSidebar = () => {
-    setIsSidebarCollapsed(!isSidebarCollapsed);
-  };
-
-  const handleAddEmployee = () => {
-    setIsAddingEmployee(true);
-    setEditingEmployee({
-      id: null,
-      name: '',
-      email: '',
-      phone: '',
-      assignedServices: []
-    });
-  };
-
-  const handleEditEmployee = (employee) => {
-    setIsAddingEmployee(false);
-    setEditingEmployee({ ...employee });
-  };
 
   // Email validation function
   const validateEmail = (email) => {
@@ -154,22 +120,19 @@ const EmployeeManagementScreen = () => {
   const validateEmployeeForm = () => {
     const errors = {};
 
-    // Name validation
-    if (!editingEmployee.name?.trim()) {
+    if (!formData.name?.trim()) {
       errors.name = 'Name is required';
     }
 
-    // Email validation
-    if (!editingEmployee.email?.trim()) {
+    if (!formData.email?.trim()) {
       errors.email = 'Email is required';
-    } else if (!validateEmail(editingEmployee.email)) {
+    } else if (!validateEmail(formData.email)) {
       errors.email = 'Please enter a valid email address';
     }
 
-    // Phone validation
-    if (!editingEmployee.phone?.trim()) {
+    if (!formData.phone?.trim()) {
       errors.phone = 'Phone number is required';
-    } else if (!validatePhone(editingEmployee.phone)) {
+    } else if (!validatePhone(formData.phone)) {
       errors.phone = 'Please enter a valid phone number (10-15 digits)';
     }
 
@@ -177,15 +140,100 @@ const EmployeeManagementScreen = () => {
     return Object.keys(errors).length === 0;
   };
 
-  // Handle phone input with formatting
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      if (!validateEmployeeForm()) {
+        setIsLoading(false);
+        return;
+      }
+
+      const employeeData = {
+        name: formData.name,
+        email: formData.email,
+        cellphone: formData.phone,
+        assignedServices: formData.assignedServices || []
+      };
+
+      const response = await makeAuthenticatedRequest('/api/employee/add', {
+        method: 'POST',
+        body: JSON.stringify(employeeData)
+      });
+
+      if (response.ok) {
+        await fetchEmployees();
+        handleCancelForm();
+        setError(null);
+      } else {
+        throw new Error('Failed to save employee');
+      }
+    } catch (error) {
+      console.error('Error saving employee:', error);
+      setError(error.message || 'Failed to save employee');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleEdit = (employee) => {
+    setEditingEmployee(employee);
+    setFormData({
+      name: employee.name,
+      email: employee.email,
+      phone: employee.phone,
+      assignedServices: employee.assignedServices || []
+    });
+    setFormErrors({});
+    setShowAddForm(true);
+  };
+
+  const handleToggleStatus = async (employee) => {
+    try {
+      console.log('Toggle status for employee:', employee.id);
+      // For now, just update locally since API doesn't have this endpoint
+      setEmployees(prev => prev.map(emp =>
+        emp.id === employee.id
+          ? { ...emp, status: emp.status === 'active' ? 'inactive' : 'active' }
+          : emp
+      ));
+    } catch (error) {
+      console.error('Error toggling status:', error);
+    }
+  };
+
+  const handleCancelForm = () => {
+    setShowAddForm(false);
+    setEditingEmployee(null);
+    setFormData({
+      name: '',
+      email: '',
+      phone: '',
+      assignedServices: []
+    });
+    setFormErrors({});
+  };
+
+  const handleServiceToggle = (serviceId) => {
+    const currentServices = formData.assignedServices || [];
+    const newServices = currentServices.includes(serviceId)
+      ? currentServices.filter(id => id !== serviceId)
+      : [...currentServices, serviceId];
+
+    setFormData(prev => ({
+      ...prev,
+      assignedServices: newServices
+    }));
+  };
+
   const handlePhoneChange = (value) => {
     const formattedPhone = maskPhone(value);
-    setEditingEmployee(prev => ({
+    setFormData(prev => ({
       ...prev,
       phone: formattedPhone
     }));
 
-    // Clear phone error when user starts typing
     if (formErrors.phone) {
       setFormErrors(prev => ({
         ...prev,
@@ -194,14 +242,12 @@ const EmployeeManagementScreen = () => {
     }
   };
 
-  // Handle input changes with error clearing
   const handleInputChange = (field, value) => {
-    setEditingEmployee(prev => ({
+    setFormData(prev => ({
       ...prev,
       [field]: value
     }));
 
-    // Clear field error when user starts typing
     if (formErrors[field]) {
       setFormErrors(prev => ({
         ...prev,
@@ -210,126 +256,34 @@ const EmployeeManagementScreen = () => {
     }
   };
 
-  const handleSaveEmployee = async () => {
-    setIsLoading(true);
-    try {
-      // Validate form before saving
-      if (!validateEmployeeForm()) {
-        setIsLoading(false);
-        return;
-      }
-
-      if (isAddingEmployee) {
-        // Add new employee
-        const employeeData = {
-          name: editingEmployee.name,
-          email: editingEmployee.email,
-          cellphone: editingEmployee.phone,
-          role: editingEmployee.role
-        };
-
-        const response = await makeAuthenticatedRequest('/api/employee/add', {
-          method: 'POST',
-          body: JSON.stringify(employeeData)
-        });
-
-        if (response.ok) {
-          const result = await response.json();
-
-          // If we have assigned services, assign them to the employee
-          if (editingEmployee.assignedServices.length > 0) {
-            await makeAuthenticatedRequest('/api/company/employees/assign-work', {
-              method: 'POST',
-              body: JSON.stringify({
-                employeeId: result.id || result.employeeId,
-                workIds: editingEmployee.assignedServices
-              })
-            });
-          }
-
-          // Refresh employee list
-          await fetchEmployees();
-        } else if (response.status === 401) {
-          clearAuthData();
-          navigate('/', { replace: true });
-        }
-      } else {
-        // Update existing employee - we'll need to handle work assignments
-        if (editingEmployee.assignedServices.length > 0) {
-          const response = await makeAuthenticatedRequest('/api/company/employees/assign-work', {
-            method: 'POST',
-            body: JSON.stringify({
-              employeeId: editingEmployee.id,
-              workIds: editingEmployee.assignedServices
-            })
-          });
-
-          if (response.status === 401) {
-            clearAuthData();
-            navigate('/', { replace: true });
-            return;
-          }
-
-          // Refresh employee list
-          await fetchEmployees();
-        }
-      }
-
-      setEditingEmployee(null);
-    } catch (error) {
-      console.error('Error saving employee:', error);
-      // If it's an authentication error, redirect to login
-      if (error.message?.includes('Authentication expired')) {
-        navigate('/', { replace: true });
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleCancelEdit = () => {
-    setEditingEmployee(null);
-  };
-
-  const handleToggleStatus = async (employee) => {
-    try {
-      setIsLoading(true);
-      // Note: The API doesn't seem to have an endpoint to toggle employee status
-      // We would need to implement this on the backend
-      console.log('Toggle status for employee:', employee.id);
-
-      // For now, just update locally
-      setEmployees(prev => prev.map(emp =>
-        emp.id === employee.id
-          ? { ...emp, status: emp.status === 'active' ? 'inactive' : 'active' }
-          : emp
-      ));
-    } catch (error) {
-      console.error('Error toggling status:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleServiceToggle = (serviceId) => {
-    const currentServices = editingEmployee.assignedServices || [];
-    const newServices = currentServices.includes(serviceId)
-      ? currentServices.filter(id => id !== serviceId)
-      : [...currentServices, serviceId];
-
-    setEditingEmployee(prev => ({
-      ...prev,
-      assignedServices: newServices
-    }));
-  };
-
   const getAssignedServiceNames = (serviceIds) => {
     return availableWorks
       .filter(work => serviceIds.includes(work.id))
-      .map(work => work.name);
+      .map(work => ({ id: work.id, name: work.name }));
   };
 
-  if (isLoading) {
+  const handleLogout = () => {
+    clearAuthData();
+    navigate('/');
+  };
+
+  const handleSidebarToggle = () => {
+    setIsSidebarCollapsed(!isSidebarCollapsed);
+  };
+
+  // Filter employees
+  const filteredEmployees = employees.filter(employee => {
+    const matchesSearchTerm = employee.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      employee.email?.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesStatusFilter = filterStatus === 'all' ||
+      (filterStatus === 'active' && employee.status === 'active') ||
+      (filterStatus === 'inactive' && employee.status === 'inactive');
+
+    return matchesSearchTerm && matchesStatusFilter;
+  });
+
+  if (isLoading && employees.length === 0) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
@@ -346,62 +300,40 @@ const EmployeeManagementScreen = () => {
       <RoleBasedHeader
         user={user}
         company={company}
-        notifications={notifications}
         onLogout={handleLogout}
-        onToggleSidebar={handleToggleSidebar}
+        onToggleSidebar={handleSidebarToggle}
         isSidebarCollapsed={isSidebarCollapsed}
       />
 
       {/* Sidebar */}
       <AdminSidebar
         isCollapsed={isSidebarCollapsed}
-        onToggle={handleToggleSidebar}
+        onToggle={handleSidebarToggle}
         user={user}
       />
 
       {/* Main Content */}
-      <main className={`pt-16 transition-all duration-300 ${
+      <main className={`pt-16 transition-all duration-300 ease-in-out ${
         isSidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'
       }`}>
-        <div className="p-4 lg:p-6">
-          {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-            <div>
-              <h1 className="text-2xl lg:text-3xl font-bold text-foreground">Employees</h1>
-              <p className="text-sm text-muted-foreground mt-1">
-                Manage employees and their services
-              </p>
-            </div>
-            <Button
-              onClick={handleAddEmployee}
-              iconName="UserPlus"
-              iconPosition="left"
-              className="w-full sm:w-auto"
-            >
-              Add Employee
-            </Button>
-          </div>
+        <div className="p-4 lg:p-6 max-w-7xl mx-auto">
 
-          {/* Search and Filters */}
-          <div className="flex flex-col sm:flex-row gap-4 mb-6">
-            <div className="flex-1">
-              <Input
-                placeholder="Search employees..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                iconName="Search"
+          {/* Header Section */}
+          <div className="mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h1 className="text-2xl font-bold text-foreground">Employees</h1>
+                <p className="text-muted-foreground">Manage your team members and their services</p>
+              </div>
+              <Button
+                onClick={() => setShowAddForm(true)}
+                iconName="UserPlus"
                 iconPosition="left"
-              />
+                disabled={isLoading}
+              >
+                Add Employee
+              </Button>
             </div>
-            <Select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full sm:w-40"
-            >
-              <option value="all">All Status</option>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-            </Select>
           </div>
 
           {/* Statistics */}
@@ -440,22 +372,162 @@ const EmployeeManagementScreen = () => {
             </div>
           </div>
 
-          {/* Employee Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {filteredEmployees.map(employee => (
-              <div key={employee.id} className="bg-card rounded-lg border p-4">
-                <div className="flex items-start gap-3">
-                  <img
-                    src={employee.pictureUrl}
-                    alt={employee.name}
-                    className="w-12 h-12 rounded-full object-cover"
+          {/* Filter and Search Section */}
+          <div className="mb-6 space-y-4">
+            {/* Filter Buttons */}
+            <div className="flex flex-wrap gap-1 sm:gap-2">
+              <Button
+                variant={filterStatus === 'all' ? 'default' : 'outline'}
+                size="xs"
+                onClick={() => setFilterStatus('all')}
+                className="text-xs px-2 py-1 h-7"
+              >
+                All
+              </Button>
+              <Button
+                variant={filterStatus === 'active' ? 'default' : 'outline'}
+                size="xs"
+                onClick={() => setFilterStatus('active')}
+                className="text-xs px-2 py-1 h-7"
+              >
+                Active
+              </Button>
+              <Button
+                variant={filterStatus === 'inactive' ? 'default' : 'outline'}
+                size="xs"
+                onClick={() => setFilterStatus('inactive')}
+                className="text-xs px-2 py-1 h-7"
+              >
+                Inactive
+              </Button>
+            </div>
+
+            {/* Search Bar */}
+            <Input
+              type="text"
+              placeholder="Search employees..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="max-w-md w-full sm:w-auto"
+            />
+          </div>
+
+          {/* Error Display */}
+          {error && (
+            <div className="bg-error/10 border border-error/20 rounded-lg p-4 mb-6">
+              <div className="flex items-center space-x-3">
+                <Icon name="AlertCircle" size={20} className="text-error" />
+                <p className="text-sm text-error">{error}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Add/Edit Form */}
+          {showAddForm && (
+            <div className="bg-card border border-border rounded-lg p-6 mb-6">
+              <h2 className="text-lg font-semibold text-foreground mb-4">
+                {editingEmployee ? 'Edit Employee' : 'Add New Employee'}
+              </h2>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Input
+                    label="Employee Name"
+                    type="text"
+                    placeholder="Enter employee name"
+                    value={formData.name}
+                    onChange={(e) => handleInputChange('name', e.target.value)}
+                    error={formErrors.name}
+                    required
                   />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-semibold text-foreground truncate">
-                        {employee.name}
-                      </h3>
-                      <div className="flex items-center gap-1">
+                  <Input
+                    label="Email"
+                    type="email"
+                    placeholder="employee@company.com"
+                    value={formData.email}
+                    onChange={(e) => handleInputChange('email', e.target.value)}
+                    error={formErrors.email}
+                    required
+                  />
+                </div>
+                <Input
+                  label="Phone Number"
+                  type="tel"
+                  placeholder="+00 00 00000 0000"
+                  value={formData.phone}
+                  onChange={(e) => handlePhoneChange(e.target.value)}
+                  error={formErrors.phone}
+                  required
+                />
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Assigned Services
+                  </label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-40 overflow-y-auto">
+                    {availableWorks.map(service => (
+                      <label key={service.id} className="flex items-center gap-2 p-2 border rounded">
+                        <input
+                          type="checkbox"
+                          checked={formData.assignedServices.includes(service.id)}
+                          onChange={() => handleServiceToggle(service.id)}
+                          className="rounded"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-medium">{service.name}</span>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <span>${service.price}</span>
+                            <span>•</span>
+                            <span>{formatDuration(service.durationMinutes)}</span>
+                          </div>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleCancelForm}
+                    disabled={isLoading}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? 'Saving...' : (editingEmployee ? 'Update' : 'Add')}
+                  </Button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* Employee List */}
+          <div className="space-y-3">
+            {filteredEmployees.length === 0 ? (
+              <div className="text-center py-12">
+                <Icon name="Users" className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-foreground mb-2">No employees found</h3>
+                <p className="text-muted-foreground mb-4">
+                  {searchTerm || filterStatus !== 'all'
+                    ? 'Try adjusting your search or filters'
+                    : 'Get started by adding your first employee'
+                  }
+                </p>
+                {!searchTerm && filterStatus === 'all' && (
+                  <Button onClick={() => setShowAddForm(true)} iconName="UserPlus">
+                    Add Employee
+                  </Button>
+                )}
+              </div>
+            ) : (
+              filteredEmployees.map(employee => (
+                <div key={employee.id} className="bg-card border border-border rounded-lg p-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h3 className="font-semibold text-foreground">{employee.name}</h3>
                         <span className={`px-2 py-1 text-xs font-medium rounded-full ${
                           employee.status === 'active' 
                             ? 'bg-green-100 text-green-700' 
@@ -464,173 +536,53 @@ const EmployeeManagementScreen = () => {
                           {employee.status}
                         </span>
                       </div>
-                    </div>
-                    <p className="text-sm text-muted-foreground capitalize">
-                      {employee.role}
-                    </p>
-                    <p className="text-sm text-muted-foreground truncate">
-                      {employee.email}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {employee.phone}
-                    </p>
-
-                    {/* Assigned Services */}
-                    <div className="mt-3">
-                      <p className="text-xs text-muted-foreground mb-1">Services:</p>
-                      <div className="flex flex-wrap gap-1">
-                        {getAssignedServiceNames(employee.assignedServices).map(serviceName => (
-                          <span
-                            key={serviceName}
-                            className="px-2 py-1 text-xs bg-primary/10 text-primary rounded"
-                          >
-                            {serviceName}
-                          </span>
-                        ))}
-                        {employee.assignedServices.length === 0 && (
-                          <span className="text-xs text-muted-foreground">No services assigned</span>
-                        )}
+                      <div className="text-sm text-muted-foreground space-y-1">
+                        <p>{employee.email}</p>
+                        <p>{employee.phone}</p>
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {getAssignedServiceNames(employee.assignedServices).map(service => (
+                            <span
+                              key={service.id}
+                              className="px-2 py-1 text-xs bg-primary/10 text-primary rounded"
+                            >
+                              {service.name}
+                            </span>
+                          ))}
+                          {employee.assignedServices.length === 0 && (
+                            <span className="text-xs text-muted-foreground">No services assigned</span>
+                          )}
+                        </div>
                       </div>
                     </div>
-
-                    {/* Actions */}
-                    <div className="flex gap-2 mt-4">
+                    <div className="flex gap-2">
                       <Button
-                        size="sm"
+                        size="xs"
                         variant="outline"
-                        onClick={() => handleEditEmployee(employee)}
+                        onClick={() => handleEdit(employee)}
                         iconName="Edit"
-                        className="flex-1"
+                        className="text-xs px-2 py-1 h-7"
                       >
                         Edit
                       </Button>
                       <Button
-                        size="sm"
+                        size="xs"
                         variant={employee.status === 'active' ? 'outline' : 'default'}
                         onClick={() => handleToggleStatus(employee)}
                         iconName={employee.status === 'active' ? 'UserX' : 'UserCheck'}
-                        className="flex-1"
-                        disabled={isLoading}
+                        className="text-xs px-2 py-1 h-7"
                       >
                         {employee.status === 'active' ? 'Deactivate' : 'Activate'}
                       </Button>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
-
-          {filteredEmployees.length === 0 && (
-            <div className="text-center py-12">
-              <Icon name="Users" className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-foreground mb-2">No employees found</h3>
-              <p className="text-muted-foreground mb-4">
-                {searchTerm || statusFilter !== 'all'
-                  ? 'Try adjusting your search or filters'
-                  : 'Get started by adding your first employee'
-                }
-              </p>
-              {!searchTerm && statusFilter === 'all' && (
-                <Button onClick={handleAddEmployee} iconName="UserPlus">
-                  Add Employee
-                </Button>
-              )}
-            </div>
-          )}
         </div>
       </main>
-
-      {/* Employee Form Modal */}
-      {editingEmployee && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-card rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-bold mb-4">
-              {isAddingEmployee ? 'Add Employee' : 'Edit Employee'}
-            </h2>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Name</label>
-                <Input
-                  value={editingEmployee.name}
-                  onChange={(e) => handleInputChange('name', e.target.value)}
-                  placeholder="Enter name"
-                  error={formErrors.name}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">Email</label>
-                <Input
-                  type="email"
-                  value={editingEmployee.email}
-                  onChange={(e) => handleInputChange('email', e.target.value)}
-                  placeholder="Enter email"
-                  error={formErrors.email}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">Phone</label>
-                <Input
-                  value={editingEmployee.phone}
-                  onChange={(e) => handlePhoneChange(e.target.value)}
-                  placeholder="Enter phone"
-                  error={formErrors.phone}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">Assigned Services</label>
-                <div className="space-y-2 max-h-40 overflow-y-auto">
-                  {availableWorks.map(service => (
-                    <label key={service.id} className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={editingEmployee.assignedServices.includes(service.id)}
-                        onChange={() => handleServiceToggle(service.id)}
-                        className="rounded"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <span className="text-sm font-medium">{service.name}</span>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <span>${service.price}</span>
-                          <span>•</span>
-                          <span>{formatDuration(service.durationMinutes)}</span>
-                        </div>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-2 mt-6">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleCancelEdit}
-                className="flex-1"
-                disabled={isLoading}
-              >
-                Cancel
-              </Button>
-              <Button
-                size="sm"
-                onClick={handleSaveEmployee}
-                className="flex-1"
-                disabled={isLoading || !editingEmployee.name || !editingEmployee.email}
-              >
-                {isLoading ? 'Saving...' : 'Save'}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
 
 export default EmployeeManagementScreen;
-
