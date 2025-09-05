@@ -17,6 +17,7 @@ const CompanyRegistrationScreen = () => {
   const [formData, setFormData] = useState({
     // Company Details
     companyName: '',
+    companyAlias: '',
     phone: '',
     email: '',
     address: '',
@@ -82,6 +83,7 @@ const CompanyRegistrationScreen = () => {
     if (company) {
       setFormData({
         companyName: company.name || '',
+        companyAlias: company.alias || '',
         phone: company.phone || '',
         email: company.email || '',
         address: company.address || '',
@@ -93,6 +95,21 @@ const CompanyRegistrationScreen = () => {
 
   const validateForm = () => {
     const newErrors = {};
+
+    // Company Alias validation
+    if (!formData?.companyAlias?.trim()) {
+      newErrors.companyAlias = 'Company Alias is required';
+    } else {
+      // Check if alias contains only alphanumeric characters (0-9, a-z, A-Z)
+      const aliasRegex = /^[a-zA-Z0-9]+$/;
+      if (!aliasRegex.test(formData.companyAlias)) {
+        newErrors.companyAlias = 'Company Alias can only contain letters (a-z, A-Z) and numbers (0-9)';
+      } else if (formData.companyAlias.length < 3) {
+        newErrors.companyAlias = 'Company Alias must be at least 3 characters long';
+      } else if (formData.companyAlias.length > 20) {
+        newErrors.companyAlias = 'Company Alias must be no more than 20 characters long';
+      }
+    }
 
     // Company Details validation - Remove validation for read-only fields
     if (!formData?.phone?.trim()) newErrors.phone = 'Phone number is required';
@@ -139,6 +156,7 @@ const CompanyRegistrationScreen = () => {
       // Prepare the request payload according to the API contract
       const registrationData = {
         name: formData.companyName,
+        alias: formData.companyAlias.toLowerCase(), // Convert to lowercase for consistency
         email: formData.email,
         cellphone: formData.phone,
         address: formData.address,
@@ -170,6 +188,9 @@ const CompanyRegistrationScreen = () => {
             errorMessage.toLowerCase().includes('already exists') ||
             errorMessage.toLowerCase().includes('duplicate')) {
           setErrors({ phone: errorMessage });
+        } else if (errorMessage.toLowerCase().includes('alias') ||
+                   errorMessage.toLowerCase().includes('company alias')) {
+          setErrors({ companyAlias: errorMessage });
         } else {
           setErrors({ submit: errorMessage });
         }
@@ -251,7 +272,7 @@ const CompanyRegistrationScreen = () => {
             <>
               <div className="mb-6">
                 <h1 className="text-2xl font-semibold text-foreground">
-                  Company Registration
+                  Configuration
                 </h1>
                 <p className="text-sm text-muted-foreground mt-1">
                   Fill in your company details and business hours to get started

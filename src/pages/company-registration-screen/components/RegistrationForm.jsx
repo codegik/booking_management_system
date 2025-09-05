@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import Input from '../../../components/ui/Input';
 import { Checkbox } from '../../../components/ui/Checkbox';
 import Select from '../../../components/ui/Select';
@@ -6,6 +6,15 @@ import Icon from '../../../components/AppIcon';
 import { maskPhone } from '../../../utils/phoneFormatter';
 
 const RegistrationForm = ({ formData, setFormData, errors = {} }) => {
+  const aliasInputRef = useRef(null);
+
+  // Focus on alias field when component mounts
+  useEffect(() => {
+    if (aliasInputRef.current) {
+      aliasInputRef.current.focus();
+    }
+  }, []);
+
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
       ...prev,
@@ -16,6 +25,13 @@ const RegistrationForm = ({ formData, setFormData, errors = {} }) => {
   const handlePhoneChange = (value) => {
     const formattedPhone = maskPhone(value);
     handleInputChange('phone', formattedPhone);
+  };
+
+  // Handle Company Alias change with character filtering
+  const handleAliasChange = (value) => {
+    // Remove any non-alphanumeric characters but keep original case
+    const cleanedValue = value.replace(/[^a-zA-Z0-9]/g, '');
+    handleInputChange('companyAlias', cleanedValue);
   };
 
   // Business Hours logic
@@ -81,7 +97,7 @@ const RegistrationForm = ({ formData, setFormData, errors = {} }) => {
   return (
     <div className="space-y-8">
       <div className="space-y-6">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
           <Input
             label="Company Name"
             type="text"
@@ -94,18 +110,32 @@ const RegistrationForm = ({ formData, setFormData, errors = {} }) => {
             disabled={true}
             readOnly={true}
           />
+            <Input
+                label="Business Email"
+                type="email"
+                placeholder="business@company.com"
+                value={formData?.email || ''}
+                onChange={(e) => handleInputChange('email', e?.target?.value)}
+                error={errors?.email}
+                required
+                disabled={true}
+                readOnly={true}
+            />
 
           <Input
-            label="Business Email"
-            type="email"
-            placeholder="business@company.com"
-            value={formData?.email || ''}
-            onChange={(e) => handleInputChange('email', e?.target?.value)}
-            error={errors?.email}
+            label="Company Alias"
+            type="text"
+            placeholder="mycompany123"
+            value={formData?.companyAlias || ''}
+            onChange={(e) => handleAliasChange(e?.target?.value)}
+            error={errors?.companyAlias}
             required
-            disabled={true}
-            readOnly={true}
+            className="lg:col-span-2"
+            ref={aliasInputRef}
           />
+          <p className="text-xs text-muted-foreground -mt-1">
+            This will be used by customers to identify your business. Only letters (a-z, A-Z) and numbers (0-9) are allowed.
+          </p>
 
           <Input
             label="Phone Number"

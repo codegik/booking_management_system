@@ -6,6 +6,7 @@ import ProtectedRoute from "components/ProtectedRoute";
 import NotFound from "pages/NotFound";
 import CompanyDashboard from './pages/company-dashboard';
 import CompanyRegistrationScreen from './pages/company-registration-screen';
+import CustomerRegistrationScreen from './pages/customer-registration-screen';
 import ServiceManagementScreen from './pages/service-management-screen';
 import EmployeeManagementScreen from './pages/employee-management-screen';
 import CreateEditBookingScreen from './pages/create-edit-booking-screen';
@@ -62,6 +63,10 @@ const Routes = () => {
           }
         />
         <Route path="/customer-dashboard" element={<CustomerDashboard />} />
+
+        {/* Customer registration route - must be before the catch-all route */}
+        <Route path="/:companyAlias" element={<CustomerRegistrationScreen />} />
+
         <Route path="*" element={<NotFound />} />
       </RouterRoutes>
       </ErrorBoundary>
