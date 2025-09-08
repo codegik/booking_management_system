@@ -1,0 +1,218 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import Button from '../../components/ui/Button';
+import Icon from '../../components/AppIcon';
+
+const CustomerBookingHistory = () => {
+  const navigate = useNavigate();
+  const [bookings, setBookings] = useState([]);
+  const [company, setCompany] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  // Load jwtToken from localStorage
+  const jwtToken = localStorage.getItem('jwtToken');
+
+  // Helper for fetch with auth
+  const fetchWithAuth = (url, options = {}) => {
+    const headers = {
+      ...(options.headers || {}),
+      ...(jwtToken ? { Authorization: `Bearer ${jwtToken}` } : {})
+    };
+    return fetch(url, { ...options, headers });
+  };
+
+  // Fetch company info from localStorage (set during registration)
+  useEffect(() => {
+    const companyId = localStorage.getItem('selectedCompanyId');
+    if (!companyId) return;
+    fetchWithAuth(`/api/company/id/${companyId}`)
+      .then(res => res.json())
+      .then(data => setCompany(data))
+      .catch(() => setError('Failed to load company info'));
+  }, [jwtToken]);
+
+  // Fetch customer bookings
+  useEffect(() => {
+    const fetchBookings = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const response = await fetchWithAuth('/api/customer/bookings');
+
+        if (!response.ok) {
+          throw new Error('Failed to load booking history');
+        }
+
+        const data = await response.json();
+        setBookings(data);
+      } catch (error) {
+        console.error('Error fetching bookings:', error);
+        setError(error.message || 'Failed to load booking history');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBookings();
+  }, [jwtToken]);
+
+  // Format date for display
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  // Format time for display
+  const formatTime = (dateTimeString) => {
+    const date = new Date(dateTimeString);
+    return date.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+  };
+
+  // Get status color
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'CONFIRMED':
+        return 'text-green-600 bg-green-50 border-green-200';
+      case 'CANCELLED':
+        return 'text-red-600 bg-red-50 border-red-200';
+      case 'COMPLETED':
+        return 'text-blue-600 bg-blue-50 border-blue-200';
+      default:
+        return 'text-gray-600 bg-gray-50 border-gray-200';
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="bg-card border-b border-border shadow-soft">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center space-x-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate('/customer-dashboard')}
+                className="p-2"
+              >
+                ←
+              </Button>
+            </div>
+            <div className="flex items-center space-x-3">
+              {company?.pictureUrl && (
+                <img src={company.pictureUrl} alt="Company" className="w-8 h-8 rounded-full object-cover" />
+              )}
+              <span className="text-sm text-muted-foreground">{company?.name}</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="max-w-4xl mx-auto px-4 py-8">
+        {error && (
+          <div className="bg-error/10 border border-error/20 rounded-lg p-4 mb-6">
+            <div className="flex items-center space-x-3">
+              <Icon name="AlertCircle" size={20} className="text-error" />
+              <p className="text-sm text-error">{error}</p>
+            </div>
+          </div>
+        )}
+
+        {loading ? (
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading your bookings...</p>
+          </div>
+        ) : bookings.length === 0 ? (
+          <div className="text-center py-12">
+            <Icon name="Calendar" size={48} className="text-muted-foreground mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-foreground mb-2">No bookings yet</h2>
+            <p className="text-muted-foreground mb-6">
+              You haven't made any appointments yet. Book your first appointment to get started.
+            </p>
+            <Button onClick={() => navigate('/customer-dashboard')}>
+              Book Your First Appointment
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold text-foreground mb-4">
+              Your Appointments ({bookings.length})
+            </h2>
+            {bookings.map((booking) => (
+              <div
+                key={booking.id}
+                className="bg-card rounded-lg border border-border p-6 hover:shadow-md transition-shadow"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-3 mb-2">
+                      <h3 className="font-semibold text-foreground">{booking.workName}</h3>
+                      <span
+                        className={`px-2 py-1 text-xs rounded-full border ${getStatusColor(
+                          booking.status
+                        )}`}
+                      >
+                        {booking.status}
+                      </span>
+                    </div>
+                    <div className="space-y-1 text-sm text-muted-foreground">
+                      <p>
+                        <Icon name="User" size={14} className="inline mr-2" />
+                        Professional: {booking.employeeName}
+                      </p>
+                      <p>
+                        <Icon name="Calendar" size={14} className="inline mr-2" />
+                        Date: {formatDate(booking.bookingDate)}
+                      </p>
+                      <p>
+                        <Icon name="Clock" size={14} className="inline mr-2" />
+                        Time: {formatTime(booking.startDateTime)} - {formatTime(booking.endDateTime)}
+                      </p>
+                      <p>
+                        <Icon name="Timer" size={14} className="inline mr-2" />
+                        Duration: {booking.durationMinutes} minutes
+                      </p>
+                      {booking.notes && (
+                        <p>
+                          <Icon name="FileText" size={14} className="inline mr-2" />
+                          Notes: {booking.notes}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex flex-col space-y-2">
+                    {booking.status === 'CONFIRMED' && (
+                      <Button variant="outline" size="sm">
+                        Cancel
+                      </Button>
+                    )}
+                    {booking.status === 'COMPLETED' && (
+                      <Button variant="outline" size="sm">
+                        Book Again
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </main>
+    </div>
+  );
+};
+
+export default CustomerBookingHistory;
