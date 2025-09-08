@@ -9,6 +9,7 @@ const CustomerBookingHistory = () => {
   const [company, setCompany] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [cancellingBookingId, setCancellingBookingId] = useState(null);
 
   // Load jwtToken from localStorage
   const jwtToken = localStorage.getItem('jwtToken');
@@ -93,6 +94,36 @@ const CustomerBookingHistory = () => {
     }
   };
 
+  // Cancel booking function
+  const handleCancelBooking = async (bookingId) => {
+    try {
+      setCancellingBookingId(bookingId);
+      setError(null);
+
+      const response = await fetchWithAuth(`/api/customer/bookings/${bookingId}/cancel`, {
+        method: 'PUT'
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to cancel booking');
+      }
+
+      // Update the booking status in the local state
+      setBookings(prevBookings =>
+        prevBookings.map(booking =>
+          booking.id === bookingId
+            ? { ...booking, status: 'CANCELLED' }
+            : booking
+        )
+      );
+    } catch (error) {
+      console.error('Error cancelling booking:', error);
+      setError(error.message || 'Failed to cancel booking');
+    } finally {
+      setCancellingBookingId(null);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -156,8 +187,8 @@ const CustomerBookingHistory = () => {
                 key={booking.id}
                 className="bg-card rounded-lg border border-border p-6 hover:shadow-md transition-shadow"
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
                     <div className="flex items-center space-x-3 mb-2">
                       <h3 className="font-semibold text-foreground">{booking.workName}</h3>
                       <span
@@ -168,35 +199,38 @@ const CustomerBookingHistory = () => {
                         {booking.status}
                       </span>
                     </div>
-                    <div className="space-y-1 text-sm text-muted-foreground">
-                      <p>
-                        <Icon name="User" size={14} className="inline mr-2" />
-                        Professional: {booking.employeeName}
-                      </p>
-                      <p>
-                        <Icon name="Calendar" size={14} className="inline mr-2" />
-                        Date: {formatDate(booking.bookingDate)}
-                      </p>
-                      <p>
-                        <Icon name="Clock" size={14} className="inline mr-2" />
-                        Time: {formatTime(booking.startDateTime)} - {formatTime(booking.endDateTime)}
-                      </p>
-                      <p>
-                        <Icon name="Timer" size={14} className="inline mr-2" />
-                        Duration: {booking.durationMinutes} minutes
-                      </p>
+                    <div className="space-y-1 text-sm">
+                      <div className="flex items-center space-x-2 text-muted-foreground hover:text-foreground transition-colors duration-200">
+                        <Icon name="User" size={14} className="flex-shrink-0" />
+                        <span>Professional: {booking.employeeName}</span>
+                      </div>
+                      <div className="flex items-center space-x-2 text-muted-foreground hover:text-foreground transition-colors duration-200">
+                        <Icon name="Calendar" size={14} className="flex-shrink-0" />
+                        <span className="whitespace-nowrap">Date: {formatDate(booking.bookingDate)}</span>
+                      </div>
+                      <div className="flex items-center space-x-2 text-muted-foreground hover:text-foreground transition-colors duration-200">
+                        <Icon name="Clock" size={14} className="flex-shrink-0" />
+                        <span className="whitespace-nowrap">Time: {formatTime(booking.startDateTime)} - {formatTime(booking.stopDateTime)}</span>
+                      </div>
                       {booking.notes && (
-                        <p>
-                          <Icon name="FileText" size={14} className="inline mr-2" />
-                          Notes: {booking.notes}
-                        </p>
+                        <div className="flex items-start space-x-2 text-muted-foreground hover:text-foreground transition-colors duration-200">
+                          <Icon name="FileText" size={14} className="flex-shrink-0 mt-0.5" />
+                          <span>Notes: {booking.notes}</span>
+                        </div>
                       )}
                     </div>
                   </div>
-                  <div className="flex flex-col space-y-2">
+                  <div className="flex flex-col space-y-2 flex-shrink-0">
                     {booking.status === 'CONFIRMED' && (
-                      <Button variant="outline" size="sm">
-                        Cancel
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center space-x-1"
+                        onClick={() => handleCancelBooking(booking.id)}
+                        disabled={cancellingBookingId === booking.id}
+                      >
+                        <Icon name="X" size={14} />
+                        <span>{cancellingBookingId === booking.id ? 'Cancelling...' : 'Cancel'}</span>
                       </Button>
                     )}
                     {booking.status === 'COMPLETED' && (

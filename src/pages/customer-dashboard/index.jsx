@@ -129,7 +129,7 @@ const CustomerDashboard = () => {
                 <Button
                   onClick={() => navigate('/customer-booking-history')}
                   variant="outline"
-                  className="w-full"
+                  className="w-full hover:bg-accent hover:text-accent-foreground transition-colors"
                 >
                   View History
                 </Button>
