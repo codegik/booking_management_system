@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
@@ -20,6 +20,8 @@ const CustomerRegistrationScreen = () => {
     phone: ''
   });
 
+  const phoneInputRef = useRef(null);
+
   // Fetch company details by alias
   useEffect(() => {
     const fetchCompanyByAlias = async () => {
@@ -33,7 +35,7 @@ const CustomerRegistrationScreen = () => {
         setIsLoadingCompany(true);
         setError(null);
 
-        const response = await fetch(`/api/company/${companyAlias}`, {
+        const response = await fetch(`/api/company/alias/${companyAlias}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json'
@@ -63,6 +65,13 @@ const CustomerRegistrationScreen = () => {
 
     fetchCompanyByAlias();
   }, [companyAlias]);
+
+  // Focus phone input on mount
+  useEffect(() => {
+    if (phoneInputRef.current) {
+      phoneInputRef.current.focus();
+    }
+  }, []);
 
   // Validation function
   const validateForm = () => {
@@ -120,8 +129,7 @@ const CustomerRegistrationScreen = () => {
           : 'Registration failed';
 
         // Handle specific field errors
-        if (errorMessage.toLowerCase().includes('phone') ||
-            errorMessage.toLowerCase().includes('cellphone')) {
+        if (errorMessage.toLowerCase().includes('cellphone')) {
           setFormErrors({ phone: errorMessage });
         } else if (errorMessage.toLowerCase().includes('name')) {
           setFormErrors({ name: errorMessage });
@@ -133,20 +141,21 @@ const CustomerRegistrationScreen = () => {
 
       const responseData = await response.json();
 
-      // Store JWT token from response
       if (responseData.token) {
         localStorage.setItem('jwtToken', responseData.token);
         localStorage.setItem('isAuthenticated', 'true');
       }
-
-      // Store customer data if provided in response
+      if (responseData.expiresAt) {
+         localStorage.setItem('jwtTokenExpiresAt', responseData.expiresAt);
+      }
+      if (responseData.cellphone) {
+         localStorage.setItem('customerCellphone', responseData.cellphone);
+      }
       if (responseData.id) {
         localStorage.setItem('customerId', responseData.id);
       }
-
-      // Store customer data for future use
-      if (responseData.customer) {
-        localStorage.setItem('customerData', JSON.stringify(responseData.customer));
+      if (responseData.name) {
+        localStorage.setItem('customerName', responseData.name);
       }
 
       // Navigate to customer dashboard or booking screen
@@ -254,6 +263,7 @@ const CustomerRegistrationScreen = () => {
               onChange={(e) => handlePhoneChange(e.target.value)}
               error={formErrors.phone}
               required
+              inputRef={phoneInputRef}
             />
 
             {error && (

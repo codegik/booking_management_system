@@ -40,6 +40,7 @@ const useCompanyDetails = () => {
         email: companyData.email,
         description: companyData.description,
         role: companyData.role,
+        alias: companyData.alias,
         workDays: companyData.workDays
       });
     } catch (error) {
