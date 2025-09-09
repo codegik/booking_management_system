@@ -61,18 +61,39 @@ const CustomerBookingHistory = () => {
 
   // Format date for display
   const formatDate = (dateString) => {
-    const date = new Date(dateString);
+    // Parse the date string and treat it as local time to avoid timezone issues
+    const [year, month, day] = dateString.split('-').map(Number);
+    const date = new Date(year, month - 1, day); // month is 0-indexed in JS Date
     return date.toLocaleDateString('en-US', {
       weekday: 'long',
       year: 'numeric',
-      month: 'long',
+      month: 'short',
       day: 'numeric'
     });
   };
 
   // Format time for display
   const formatTime = (dateTimeString) => {
+    // Handle timezone issues by parsing the datetime string manually
+    // Expected format: "2025-09-08T14:30:00" or similar ISO format
     const date = new Date(dateTimeString);
+
+    // If the datetime string doesn't include timezone info, treat it as local time
+    if (dateTimeString.indexOf('T') !== -1 && dateTimeString.indexOf('Z') === -1 && dateTimeString.indexOf('+') === -1 && dateTimeString.indexOf('-', 10) === -1) {
+      // Parse manually to avoid timezone conversion for local datetime strings
+      const [datePart, timePart] = dateTimeString.split('T');
+      const [year, month, day] = datePart.split('-').map(Number);
+      const [hour, minute, second] = timePart.split(':').map(Number);
+      const localDate = new Date(year, month - 1, day, hour, minute, second || 0);
+
+      return localDate.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: false
+      });
+    }
+
+    // For datetime strings with timezone info, use normal parsing
     return date.toLocaleTimeString('en-US', {
       hour: 'numeric',
       minute: '2-digit',
@@ -202,20 +223,20 @@ const CustomerBookingHistory = () => {
                     <div className="space-y-1 text-sm">
                       <div className="flex items-center space-x-2 text-muted-foreground hover:text-foreground transition-colors duration-200">
                         <Icon name="User" size={14} className="flex-shrink-0" />
-                        <span>Professional: {booking.employeeName}</span>
+                        <span>{booking.employeeName}</span>
                       </div>
                       <div className="flex items-center space-x-2 text-muted-foreground hover:text-foreground transition-colors duration-200">
                         <Icon name="Calendar" size={14} className="flex-shrink-0" />
-                        <span className="whitespace-nowrap">Date: {formatDate(booking.bookingDate)}</span>
+                        <span className="whitespace-nowrap">{formatDate(booking.bookingDate)}</span>
                       </div>
                       <div className="flex items-center space-x-2 text-muted-foreground hover:text-foreground transition-colors duration-200">
                         <Icon name="Clock" size={14} className="flex-shrink-0" />
-                        <span className="whitespace-nowrap">Time: {formatTime(booking.startDateTime)} - {formatTime(booking.stopDateTime)}</span>
+                        <span className="whitespace-nowrap">{formatTime(booking.startDateTime)} - {formatTime(booking.stopDateTime)}</span>
                       </div>
                       {booking.notes && (
                         <div className="flex items-start space-x-2 text-muted-foreground hover:text-foreground transition-colors duration-200">
                           <Icon name="FileText" size={14} className="flex-shrink-0 mt-0.5" />
-                          <span>Notes: {booking.notes}</span>
+                          <span>{booking.notes}</span>
                         </div>
                       )}
                     </div>
@@ -250,3 +271,4 @@ const CustomerBookingHistory = () => {
 };
 
 export default CustomerBookingHistory;
+

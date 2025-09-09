@@ -407,8 +407,8 @@ const CustomerBooking = () => {
 
                 <div className="space-y-3 max-h-96 overflow-y-auto">
                   {(!availability || !availability.availableSlots || availability.availableSlots.length === 0) && (
-                    <div className="text-center py-12">
-                      <div className="w-16 h-16 mx-auto mb-4 bg-muted/20 rounded-full flex items-center justify-center">
+                    <div className="text-center">
+                      <div className="w-16 mx-auto mb-4 bg-muted/20 rounded-full flex items-center justify-center">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
@@ -426,7 +426,6 @@ const CustomerBooking = () => {
                           <li>📅 Select a different date from the calendar</li>
                           <li>👩‍⚕️ Choose another professional from the list above</li>
                           <li>🔄 Check back later for cancellations</li>
-                          <li>📞 Contact us directly for urgent appointments</li>
                         </ul>
                       </div>
                     </div>

@@ -14,6 +14,7 @@ const CustomerRegistrationScreen = () => {
   const [company, setCompany] = useState(null);
   const [error, setError] = useState(null);
   const [formErrors, setFormErrors] = useState({});
+  const [imageError, setImageError] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -42,19 +43,13 @@ const CustomerRegistrationScreen = () => {
           }
         });
 
-        if (!response.ok) {
-          if (response.status === 404) {
-            throw new Error('Company not found');
-          }
-          throw new Error('Failed to load company details');
+        if (response.ok) {
+            const companyData = await response.json();
+            setCompany(companyData);
+            localStorage.setItem('selectedCompanyId', companyData.id);
+        } else {
+            setError('Failed to load company details');
         }
-
-        const companyData = await response.json();
-        setCompany(companyData);
-
-        // Store company ID for later use
-        localStorage.setItem('selectedCompanyId', companyData.id);
-
       } catch (error) {
         console.error('Error fetching company:', error);
         setError(error.message || 'Failed to load company details');
@@ -70,6 +65,17 @@ const CustomerRegistrationScreen = () => {
   useEffect(() => {
     if (phoneInputRef.current) {
       phoneInputRef.current.focus();
+    }
+  }, []);
+
+  // Load saved customer name from localStorage on mount
+  useEffect(() => {
+    const savedName = localStorage.getItem('savedCustomerName');
+    if (savedName) {
+      setFormData(prev => ({
+        ...prev,
+        name: savedName
+      }));
     }
   }, []);
 
@@ -190,6 +196,18 @@ const CustomerRegistrationScreen = () => {
     handleInputChange('phone', formattedPhone);
   };
 
+  const handleNameChange = (value) => {
+    if (value.trim()) {
+      localStorage.setItem('savedCustomerName', value.trim());
+    }
+      handleInputChange('name', value);
+  };
+
+  // Handle image load error
+  const handleImageError = () => {
+    setImageError(true);
+  };
+
   // Loading state
   if (isLoadingCompany) {
     return (
@@ -223,29 +241,18 @@ const CustomerRegistrationScreen = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="bg-card border-b border-border shadow-soft">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <Icon name="Calendar" size={20} color="white" />
-              </div>
-              <div>
-                <span className="text-xl font-semibold text-foreground">
-                  {company?.name || 'Loading...'}
-                </span>
-                <p className="text-xs text-muted-foreground">Book an appointment</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
-
       {/* Main Content */}
       <main className="max-w-md mx-auto px-4 py-8">
         <div className="bg-card rounded-lg shadow-soft border border-border p-6">
           <div className="text-center mb-6">
+              {company?.pictureUrl && !imageError && (
+                  <img
+                    src={company.pictureUrl}
+                    alt="Company"
+                    className="w-8 h-8 rounded-full object-cover mx-auto mb-4"
+                    onError={handleImageError}
+                  />
+              )}
             <h1 className="text-2xl font-semibold text-foreground mb-2">
               Welcome to {company?.name}
             </h1>
@@ -263,7 +270,8 @@ const CustomerRegistrationScreen = () => {
               onChange={(e) => handlePhoneChange(e.target.value)}
               error={formErrors.phone}
               required
-              inputRef={phoneInputRef}
+              ref={phoneInputRef}
+              autoFocus
             />
 
             {error && (
@@ -276,14 +284,13 @@ const CustomerRegistrationScreen = () => {
             )}
 
               <Input
-                  label="Full Name"
+                  label="Name"
                   type="text"
                   placeholder="Enter your full name"
                   value={formData.name}
-                  onChange={(e) => handleInputChange('name', e.target.value)}
+                  onChange={(e) => handleNameChange(e.target.value)}
                   error={formErrors.name}
                   required
-                  autoFocus
               />
 
             <Button
@@ -309,9 +316,12 @@ const CustomerRegistrationScreen = () => {
 
       {/* Footer */}
       <footer className="text-center py-6">
-        <p className="text-xs text-muted-foreground">
-          Powered by Booking Management System
-        </p>
+        <a
+          href="/"
+          className="text-xs text-muted-foreground hover:text-foreground transition-colors underline"
+        >
+          Click here to manage your company's bookings
+        </a>
       </footer>
     </div>
   );
