@@ -4,7 +4,6 @@ import RoleBasedHeader from '../../components/ui/RoleBasedHeader';
 import AdminSidebar from '../../components/ui/AdminSidebar';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
-import Select from '../../components/ui/Select';
 import useCompanyDetails from '../../utils/useCompanyDetails';
 import Icon from '../../components/AppIcon';
 import { makeAuthenticatedRequest, clearAuthData } from '../../utils/auth';
@@ -44,7 +43,9 @@ const EmployeeManagementScreen = () => {
     name: '',
     email: '',
     phone: '',
-    assignedWorks: []
+    assignedWorks: [],
+    profileImage: null,
+    profileImagePreview: null
   });
 
   // Fetch employees from API
@@ -57,13 +58,14 @@ const EmployeeManagementScreen = () => {
 
       if (response.ok) {
         const employees = await response.json();
-        const transformedEmployees = employees.map((employee, index) => ({
+        const transformedEmployees = employees.map((employee) => ({
           id: employee.id,
           name: employee.name,
           email: employee.email,
           phone: employee.cellphone,
           status: employee.isActive ? 'active' : 'inactive',
-          assignedWorks: employee.assignedWorks?.map((work) => work.id) || []
+          assignedWorks: employee.assignedWorks?.map((work) => work.id) || [],
+          pictureUrl: employee.pictureUrl
         }));
         setEmployees(transformedEmployees);
       } else if (response.status === 401) {
@@ -150,6 +152,7 @@ const EmployeeManagementScreen = () => {
         return;
       }
 
+      // First, create/update the employee with basic data
       const employeeData = {
         name: formData.name,
         email: formData.email,
@@ -158,6 +161,7 @@ const EmployeeManagementScreen = () => {
       };
 
       let response;
+      let employeeId;
 
       if (editingEmployee) {
         // Update existing employee
@@ -165,20 +169,47 @@ const EmployeeManagementScreen = () => {
           method: 'PUT',
           body: JSON.stringify(employeeData)
         });
+        employeeId = editingEmployee.id;
       } else {
         // Add new employee
         response = await makeAuthenticatedRequest('/api/employee/add', {
           method: 'POST',
           body: JSON.stringify(employeeData)
         });
+
+        if (response.ok) {
+          const newEmployee = await response.json();
+          employeeId = newEmployee.id;
+        }
       }
 
-      if (response.ok) {
-        await fetchEmployees();
-        handleCancelForm();
-        setError(null);
-      } else {
+      if (!response.ok) {
         throw new Error(`Failed to ${editingEmployee ? 'update' : 'save'} employee`);
+      }
+
+      // If there's a profile image, upload it separately
+      if (formData.profileImage && employeeId) {
+        const imageFormData = new FormData();
+        imageFormData.append('picture', formData.profileImage);
+        imageFormData.append('employeeId', employeeId);
+
+        const imageResponse = await makeAuthenticatedRequest(`/api/employee/picture/${employeeId}`, {
+          method: 'PUT',
+          body: imageFormData,
+          // Don't set Content-Type header - let browser set it for FormData
+          headers: {}
+        });
+
+        if (!imageResponse.ok) {
+          console.warn('Failed to upload employee image, but employee was saved successfully');
+          setError('Employee saved but image upload failed. You can try uploading the image again by editing the employee.');
+        }
+      }
+
+      await fetchEmployees();
+      handleCancelForm();
+      if (!formData.profileImage || response.ok) {
+        setError(null);
       }
     } catch (error) {
       console.error(`Error ${editingEmployee ? 'updating' : 'saving'} employee:`, error);
@@ -194,7 +225,9 @@ const EmployeeManagementScreen = () => {
       name: employee.name,
       email: employee.email,
       phone: employee.phone,
-      assignedWorks: employee.assignedWorks || []
+      assignedWorks: employee.assignedWorks || [],
+      profileImage: null,
+      profileImagePreview: employee.pictureUrl || null
     });
     setFormErrors({});
     setShowAddForm(true);
@@ -228,16 +261,94 @@ const EmployeeManagementScreen = () => {
   };
 
   const handleCancelForm = () => {
+    // Clean up preview URL if it exists and it's a blob URL (newly uploaded image)
+    if (formData.profileImagePreview && formData.profileImagePreview.startsWith('blob:')) {
+      URL.revokeObjectURL(formData.profileImagePreview);
+    }
+
     setShowAddForm(false);
     setEditingEmployee(null);
     setFormData({
       name: '',
       email: '',
       phone: '',
-      assignedWorks: []
+      assignedWorks: [],
+      profileImage: null,
+      profileImagePreview: null
     });
     setFormErrors({});
   };
+
+  // Handle image upload
+  const handleImageUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      // Validate file type
+      const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+      if (!validTypes.includes(file.type)) {
+        setFormErrors(prev => ({
+          ...prev,
+          profileImage: 'Please select a valid image file (JPEG, PNG)'
+        }));
+        return;
+      }
+
+      // Validate file size (max 3MB)
+      const maxSize = 3 * 1024 * 1024; // 5MB in bytes
+      if (file.size > maxSize) {
+        setFormErrors(prev => ({
+          ...prev,
+          profileImage: 'Image size must be less than 3MB'
+        }));
+        return;
+      }
+
+      // Clean up previous preview URL
+      if (formData.profileImagePreview) {
+        URL.revokeObjectURL(formData.profileImagePreview);
+      }
+
+      // Create preview URL
+      const previewUrl = URL.createObjectURL(file);
+
+      setFormData(prev => ({
+        ...prev,
+        profileImage: file,
+        profileImagePreview: previewUrl
+      }));
+
+      // Clear any previous errors
+      if (formErrors.profileImage) {
+        setFormErrors(prev => ({
+          ...prev,
+          profileImage: undefined
+        }));
+      }
+    }
+  };
+
+  // Remove uploaded image
+  const handleRemoveImage = () => {
+    // Clean up the preview URL to prevent memory leaks
+    if (formData.profileImagePreview) {
+      URL.revokeObjectURL(formData.profileImagePreview);
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      profileImage: null,
+      profileImagePreview: null
+    }));
+  };
+
+  // Clean up preview URL when component unmounts
+  useEffect(() => {
+    return () => {
+      if (formData.profileImagePreview) {
+        URL.revokeObjectURL(formData.profileImagePreview);
+      }
+    };
+  }, [formData.profileImagePreview]);
 
   const handleServiceToggle = (serviceId) => {
     const currentServices = formData.assignedWorks || [];
@@ -462,6 +573,65 @@ const EmployeeManagementScreen = () => {
                   error={formErrors.phone}
                   required
                 />
+
+                {/* Profile Image Upload */}
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Profile Image
+                  </label>
+                  <div className="space-y-4">
+                    {/* Image Preview */}
+                    {formData.profileImagePreview && (
+                      <div className="flex items-center gap-4">
+                        <div className="relative">
+                          <img
+                            src={formData.profileImagePreview}
+                            alt="Profile preview"
+                            className="w-20 h-20 rounded-full object-cover border-2 border-border"
+                          />
+                          <button
+                            type="button"
+                            onClick={handleRemoveImage}
+                            className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600 transition-colors"
+                          >
+                            ×
+                          </button>
+                        </div>
+                        <div>
+                          <p className="text-sm text-foreground font-medium">Image selected</p>
+                          <p className="text-xs text-muted-foreground">
+                            {formData.profileImage?.name} ({Math.round(formData.profileImage?.size / 1024)}KB)
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Upload Button */}
+                    <div>
+                      <input
+                        type="file"
+                        id="profileImage"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="hidden"
+                      />
+                      <label
+                        htmlFor="profileImage"
+                        className="inline-flex items-center gap-2 px-4 py-2 border border-border rounded-md text-sm font-medium text-foreground bg-background hover:bg-accent hover:text-accent-foreground cursor-pointer transition-colors"
+                      >
+                        <Icon name="Upload" size={16} />
+                        {formData.profileImage ? 'Change Image' : 'Upload Image'}
+                      </label>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Supported formats: JPEG, PNG, GIF. Max size: 5MB
+                      </p>
+                      {formErrors.profileImage && (
+                        <p className="text-xs text-red-500 mt-1">{formErrors.profileImage}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-2">
                     Assigned Services
@@ -554,44 +724,68 @@ const EmployeeManagementScreen = () => {
               filteredEmployees.map(employee => (
                 <div key={employee.id} className="bg-card border border-border rounded-lg p-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="font-semibold text-foreground">{employee.name}</h3>
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                          employee.status === 'active' 
-                            ? 'bg-green-100 text-green-700' 
-                            : 'bg-orange-100 text-orange-700'
-                        }`}>
-                          {employee.status}
-                        </span>
+                    <div className="flex items-start gap-3 flex-1">
+                      {/* Profile Picture */}
+                      <div className="flex-shrink-0">
+                        {employee.pictureUrl ? (
+                          <img
+                            src={employee.pictureUrl}
+                            alt={`${employee.name}'s profile`}
+                            className="w-12 h-12 rounded-full object-cover border-2 border-border"
+                            onError={(e) => {
+                              // Fallback to default avatar if image fails to load
+                              e.target.src = '/assets/images/no_image.png';
+                            }}
+                          />
+                        ) : (
+                          <div className="w-12 h-12 rounded-full bg-gray-200 border-2 border-border flex items-center justify-center">
+                            <Icon name="User" size={20} className="text-gray-400" />
+                          </div>
+                        )}
                       </div>
-                      <div className="text-sm text-muted-foreground space-y-1">
-                        <p>{employee.email}</p>
-                        <p>{employee.phone}</p>
-                        <div className="flex flex-wrap gap-1 mt-2">
-                          {getAssignedServiceNames(employee.assignedWorks).map(service => (
-                            <span
-                              key={service.id}
-                              className={`px-2 py-1 text-xs rounded flex items-center gap-1 ${
-                                service.isActive
-                                  ? 'bg-gray-100 text-primary'
-                                  : 'bg-gray-100 text-gray-500 line-through'
-                              }`}
-                              title={service.isActive ? 'Active service' : 'Inactive service'}
-                            >
-                              {!service.isActive && (
-                                <Icon name="AlertTriangle" size={12} className="text-orange-500" />
-                              )}
-                              {service.name}
-                            </span>
-                          ))}
-                          {employee.assignedWorks.length === 0 && (
-                            <span className="text-xs text-muted-foreground">No services assigned</span>
-                          )}
+
+                      {/* Employee Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-3 mb-2">
+                          <h3 className="font-semibold text-foreground">{employee.name}</h3>
+                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                            employee.status === 'active'
+                              ? 'bg-green-100 text-green-700'
+                              : 'bg-orange-100 text-orange-700'
+                          }`}>
+                            {employee.status}
+                          </span>
+                        </div>
+                        <div className="text-sm text-muted-foreground space-y-1">
+                          <p>{employee.email}</p>
+                          <p>{employee.phone}</p>
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {getAssignedServiceNames(employee.assignedWorks).map(service => (
+                              <span
+                                key={service.id}
+                                className={`px-2 py-1 text-xs rounded flex items-center gap-1 ${
+                                  service.isActive
+                                    ? 'bg-gray-100 text-primary'
+                                    : 'bg-gray-100 text-gray-500 line-through'
+                                }`}
+                                title={service.isActive ? 'Active service' : 'Inactive service'}
+                              >
+                                {!service.isActive && (
+                                  <Icon name="AlertTriangle" size={12} className="text-orange-500" />
+                                )}
+                                {service.name}
+                              </span>
+                            ))}
+                            {employee.assignedWorks.length === 0 && (
+                              <span className="text-xs text-muted-foreground">No services assigned</span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
-                    <div className="flex gap-2">
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-2 flex-shrink-0">
                       <Button
                         size="xs"
                         variant="outline"

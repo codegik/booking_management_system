@@ -29,14 +29,21 @@ export const markCompanyAsRegistered = () => {
 };
 
 export const makeAuthenticatedRequest = async (url, options = {}) => {
-  const headers = getAuthHeaders();
+  const token = getAuthToken();
+
+  // Check if body is FormData - if so, don't set Content-Type header
+  const isFormData = options.body instanceof FormData;
+
+  const headers = {
+    ...(token && { 'Authorization': `Bearer ${token}` }),
+    // Only set Content-Type to application/json if it's not FormData
+    ...(!isFormData && { 'Content-Type': 'application/json' }),
+    ...options.headers
+  };
 
   const response = await fetch(url, {
     ...options,
-    headers: {
-      ...headers,
-      ...options.headers
-    }
+    headers
   });
 
   // If unauthorized, clear auth data and redirect to login
