@@ -68,16 +68,25 @@ const CustomerRegistrationScreen = () => {
     }
   }, []);
 
-  // Load saved customer name from localStorage on mount
+  // Load saved customer name and phone from localStorage on mount
   useEffect(() => {
     const savedName = localStorage.getItem('savedCustomerName');
-    if (savedName) {
-      setFormData(prev => ({
-        ...prev,
-        name: savedName
-      }));
-    }
+    const savedPhone = localStorage.getItem('savedCustomerPhone');
+    setFormData(prev => ({
+      ...prev,
+      name: savedName || '',
+      phone: savedPhone || ''
+    }));
   }, []);
+
+  // Save name and phone to localStorage when they change
+  useEffect(() => {
+    localStorage.setItem('savedCustomerName', formData.name || '');
+  }, [formData.name]);
+
+  useEffect(() => {
+    localStorage.setItem('savedCustomerPhone', formData.phone || '');
+  }, [formData.phone]);
 
   // Validation function
   const validateForm = () => {

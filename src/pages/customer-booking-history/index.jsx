@@ -211,6 +211,21 @@ const CustomerBookingHistory = () => {
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center space-x-3 mb-2">
+                      {/* Work picture */}
+                      {booking.workPictureUrl || booking.pictureUrl ? (
+                        <img
+                          src={booking.workPictureUrl || booking.pictureUrl}
+                          alt={booking.workName}
+                          className="w-10 h-10 rounded object-cover border border-border mr-2"
+                          onError={e => { e.target.onerror = null; e.target.src = '/assets/images/no_image.png'; }}
+                        />
+                      ) : (
+                        <img
+                          src="/assets/images/no_image.png"
+                          alt="No work picture"
+                          className="w-10 h-10 rounded object-cover border border-border mr-2"
+                        />
+                      )}
                       <h3 className="font-semibold text-foreground">{booking.workName}</h3>
                       <span
                         className={`px-2 py-1 text-xs rounded-full border ${getStatusColor(
@@ -222,7 +237,21 @@ const CustomerBookingHistory = () => {
                     </div>
                     <div className="space-y-1 text-sm">
                       <div className="flex items-center space-x-2 text-muted-foreground hover:text-foreground transition-colors duration-200">
-                        <Icon name="User" size={14} className="flex-shrink-0" />
+                        {/* Employee picture */}
+                        {booking.employeePictureUrl ? (
+                          <img
+                            src={booking.employeePictureUrl}
+                            alt={booking.employeeName}
+                            className="w-6 h-6 rounded-full object-cover border border-border"
+                            onError={e => { e.target.onerror = null; e.target.src = '/assets/images/no_image.png'; }}
+                          />
+                        ) : (
+                          <img
+                            src="/assets/images/no_image.png"
+                            alt="No employee picture"
+                            className="w-6 h-6 rounded-full object-cover border border-border"
+                          />
+                        )}
                         <span>{booking.employeeName}</span>
                       </div>
                       <div className="flex items-center space-x-2 text-muted-foreground hover:text-foreground transition-colors duration-200">
@@ -271,4 +300,3 @@ const CustomerBookingHistory = () => {
 };
 
 export default CustomerBookingHistory;
-

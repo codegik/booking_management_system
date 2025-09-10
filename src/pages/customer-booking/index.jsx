@@ -297,10 +297,28 @@ const CustomerBooking = () => {
                 className="text-left p-4 h-auto"
                 variant="outline"
               >
-                <div>
-                  <div className="font-medium">{work.name}</div>
-                  <div className="text-sm text-muted-foreground mt-1">
-                    {work.durationMinutes} minutes • ${(work.price / 100).toFixed(2)}
+                <div className="flex items-center space-x-4">
+                  <div className="w-12 h-12 rounded bg-muted flex items-center justify-center overflow-hidden">
+                    {work.pictureUrl ? (
+                      <img
+                        src={work.pictureUrl}
+                        alt={work.name}
+                        className="w-full h-full object-cover"
+                        onError={e => { e.target.onerror = null; e.target.src = '/assets/images/no_image.png'; }}
+                      />
+                    ) : (
+                      <img
+                        src="/assets/images/no_image.png"
+                        alt="No work picture"
+                        className="w-full h-full object-cover"
+                      />
+                    )}
+                  </div>
+                  <div>
+                    <div className="font-medium">{work.name}</div>
+                    <div className="text-sm text-muted-foreground mt-1">
+                      {work.durationMinutes} minutes • ${(work.price / 100).toFixed(2)}
+                    </div>
                   </div>
                 </div>
               </Button>

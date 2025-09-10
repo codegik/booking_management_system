@@ -47,12 +47,14 @@ const ServiceManagementScreen = () => {
     }
   };
 
-  // Form state
+  // Extend form state for image upload
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     durationMinutes: 60,
-    price: 0
+    price: 0,
+    workImage: null,
+    workImagePreview: null
   });
 
   // Check authentication and fetch data on component mount
@@ -96,6 +98,18 @@ const ServiceManagementScreen = () => {
     }
   };
 
+  // Handle image input change
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setFormData(prev => ({
+        ...prev,
+        workImage: file,
+        workImagePreview: URL.createObjectURL(file)
+      }));
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -105,7 +119,12 @@ const ServiceManagementScreen = () => {
       const endpoint = editingService ? '/api/work/update' : '/api/work/add';
       const payload = editingService
         ? { ...formData, id: editingService.id }
-        : formData;
+        : {
+            name: formData.name,
+            description: formData.description,
+            durationMinutes: formData.durationMinutes,
+            price: formData.price
+          };
 
       const response = await makeAuthenticatedRequest(endpoint, {
         method: editingService ? 'PUT' : 'POST',
@@ -120,11 +139,34 @@ const ServiceManagementScreen = () => {
         throw new Error(errorMessage);
       }
 
+      let workId;
+      if (editingService) {
+        workId = editingService.id;
+      } else {
+        const newWork = await response.json();
+        workId = newWork.id;
+      }
+
+      // Upload image if selected
+      if (formData.workImage && workId) {
+        const imageFormData = new FormData();
+        imageFormData.append('picture', formData.workImage);
+        imageFormData.append('workId', workId);
+        const imageResponse = await makeAuthenticatedRequest(`/api/work/picture/${workId}`, {
+          method: 'PUT',
+          body: imageFormData,
+          headers: {}
+        });
+        if (!imageResponse.ok) {
+          setError('Work saved but image upload failed. You can try uploading the image again by editing the work.');
+        }
+      }
+
       // Refresh services list
       await fetchServices();
 
       // Reset form
-      setFormData({ name: '', description: '', durationMinutes: 60, price: 0 });
+      setFormData({ name: '', description: '', durationMinutes: 60, price: 0, workImage: null, workImagePreview: null });
       setShowAddForm(false);
       setEditingService(null);
     } catch (error) {
@@ -140,7 +182,9 @@ const ServiceManagementScreen = () => {
       name: service.name,
       description: service.description,
       durationMinutes: service.durationMinutes,
-      price: service.price
+      price: service.price,
+      workImage: null,
+      workImagePreview: service.pictureUrl || null
     });
     setEditingService(service);
     setShowAddForm(true);
@@ -362,6 +406,30 @@ const ServiceManagementScreen = () => {
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 />
+                {/* Image upload */}
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1">Work Picture</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="block w-full text-sm text-muted-foreground"
+                  />
+                  {formData.workImagePreview ? (
+                    <img
+                      src={formData.workImagePreview}
+                      alt="Work Preview"
+                      className="mt-2 w-24 h-24 object-cover rounded border border-border"
+                      onError={e => { e.target.onerror = null; e.target.src = '/assets/images/no_image.png'; }}
+                    />
+                  ) : (
+                    <img
+                      src="/assets/images/no_image.png"
+                      alt="No work picture"
+                      className="mt-2 w-24 h-24 object-cover rounded border border-border"
+                    />
+                  )}
+                </div>
                 <div className="flex flex-wrap gap-1 sm:gap-2">
                   <Button
                     type="submit"
@@ -404,39 +472,56 @@ const ServiceManagementScreen = () => {
               filteredServices.map((service) => (
                 <div key={service.id} className="bg-card border border-border rounded-lg p-4">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h3 className="text-lg font-semibold text-foreground truncate">
-                          {service.name}
-                        </h3>
-                        <span className={`px-2 py-1 text-xs rounded-full ${
-                          service.isActive 
-                            ? 'bg-success/10 text-success border border-success/20' 
-                            : 'bg-error/10 text-error border border-error/20'
-                        }`}>
-                          {service.isActive ? 'Active' : 'Inactive'}
-                        </span>
-                      </div>
-                      {service.description && (
-                        <p className="text-muted-foreground mb-2 line-clamp-2">
-                          {service.description}
-                        </p>
+                    <div className="flex-1 min-w-0 flex items-center gap-4">
+                      {/* Work picture */}
+                      {service.pictureUrl ? (
+                        <img
+                          src={service.pictureUrl}
+                          alt={service.name}
+                          className="w-16 h-16 object-cover rounded border border-border flex-shrink-0"
+                          onError={e => { e.target.onerror = null; e.target.src = '/assets/images/no_image.png'; }}
+                        />
+                      ) : (
+                        <img
+                          src="/assets/images/no_image.png"
+                          alt="No work picture"
+                          className="w-16 h-16 object-cover rounded border border-border flex-shrink-0"
+                        />
                       )}
-                      <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Icon name="Clock" size={16} />
-                          {formatDuration(service.durationMinutes)}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Icon name="DollarSign" size={16} />
-                          {(service.price / 100).toFixed(2)}
-                        </span>
-                        {service.employees && service.employees.length > 0 && (
-                          <span className="flex items-center gap-1">
-                            <Icon name="Users" size={16} />
-                            {service.employees.length} employee{service.employees.length !== 1 ? 's' : ''}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h3 className="text-lg font-semibold text-foreground truncate">
+                            {service.name}
+                          </h3>
+                          <span className={`px-2 py-1 text-xs rounded-full ${
+                            service.isActive 
+                              ? 'bg-success/10 text-success border border-success/20' 
+                              : 'bg-error/10 text-error border border-error/20'
+                          }`}>
+                            {service.isActive ? 'Active' : 'Inactive'}
                           </span>
+                        </div>
+                        {service.description && (
+                          <p className="text-muted-foreground mb-2 line-clamp-2">
+                            {service.description}
+                          </p>
                         )}
+                        <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <Icon name="Clock" size={16} />
+                            {formatDuration(service.durationMinutes)}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Icon name="DollarSign" size={16} />
+                            {(service.price / 100).toFixed(2)}
+                          </span>
+                          {service.employees && service.employees.length > 0 && (
+                            <span className="flex items-center gap-1">
+                              <Icon name="Users" size={16} />
+                              {service.employees.length} employee{service.employees.length !== 1 ? 's' : ''}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-1 sm:gap-2">
