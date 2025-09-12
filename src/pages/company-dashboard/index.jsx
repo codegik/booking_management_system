@@ -1,21 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, {useEffect, useState} from 'react';
+import {useNavigate} from 'react-router-dom';
 import Icon from '../../components/AppIcon';
 import RoleBasedHeader from '../../components/ui/RoleBasedHeader';
-import BookingStatusIndicator from '../../components/ui/BookingStatusIndicator';
 import MetricsCard from './components/MetricsCard';
 import BookingCalendarWidget from './components/BookingCalendarWidget';
-import { clearAuthData, makeAuthenticatedRequest } from '../../utils/auth';
+import { makeAuthenticatedRequest, handleLogout } from '../../utils/auth';
 import useCompanyDetails from '../../utils/useCompanyDetails';
+import Button from "../../components/ui/Button";
 
 const CompanyDashboard = () => {
   const navigate = useNavigate();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [bookingStatus, setBookingStatus] = useState(null);
   const [dashboardMetrics, setDashboardMetrics] = useState([]);
   const [metricsLoading, setMetricsLoading] = useState(false);
   const [metricsError, setMetricsError] = useState(null);
-  const { user, company, isLoading, error, fetchCompanyDetails } = useCompanyDetails();
+  const { company, isLoading, error, fetchCompanyDetails } = useCompanyDetails();
 
   // Fetch dashboard metrics from API
   const fetchDashboardMetrics = async () => {
@@ -73,24 +72,21 @@ const CompanyDashboard = () => {
     setIsSidebarCollapsed(!isSidebarCollapsed);
   };
 
-  const handleLogout = () => {
-    clearAuthData();
-    navigate('/');
-  };
-
-  const handleStatusClick = (status) => {
-    console.log('Status clicked:', status);
-  };
-
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
+        <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate('/company-dashboard')}
+            className="p-2"
+        >
+            ←
+        </Button>
       <RoleBasedHeader
-        user={user}
         company={company}
-        onLogout={handleLogout}
+        onLogout={() => handleLogout(navigate)}
         onToggleSidebar={handleSidebarToggle}
-        isSidebarCollapsed={isSidebarCollapsed}
       />
       {/* Main Content */}
       <main className={`pt-16 transition-all duration-300 ease-in-out ${
@@ -193,11 +189,6 @@ const CompanyDashboard = () => {
           )}
         </div>
       </main>
-      {/* Booking Status Indicator */}
-      <BookingStatusIndicator
-        bookingStatus={bookingStatus}
-        onStatusClick={handleStatusClick}
-      />
     </div>
   );
 };

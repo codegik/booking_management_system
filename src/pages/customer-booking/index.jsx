@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Button from '../../components/ui/Button';
+import Icon from "../../components/AppIcon";
 
 const CustomerBooking = () => {
   const navigate = useNavigate();
@@ -493,7 +494,7 @@ const CustomerBooking = () => {
                 onClick={() => navigate('/customer-dashboard')}
                 className="p-2"
               >
-                ←
+                  <Icon name="Home" size={16} className="mr-1" />
               </Button>
             </div>
             <div className="flex items-center space-x-3">

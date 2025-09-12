@@ -158,7 +158,7 @@ const CustomerBookingHistory = () => {
                 onClick={() => navigate('/customer-dashboard')}
                 className="p-2"
               >
-                ←
+                  <Icon name="Home" size={16} className="mr-1" />
               </Button>
             </div>
             <div className="flex items-center space-x-3">

@@ -4,7 +4,6 @@ import {clearAuthData, makeAuthenticatedRequest} from './auth';
 
 const useCompanyDetails = () => {
   const navigate = useNavigate();
-  const [user, setUser] = useState(null);
   const [company, setCompany] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -26,23 +25,7 @@ const useCompanyDetails = () => {
 
       const companyData = await response.json();
 
-      setUser({
-        role: companyData.role,
-        name: companyData.name,
-        email: companyData.email
-      });
-
-      setCompany({
-        name: companyData.name,
-        logo: companyData.pictureUrl,
-        address: companyData.address,
-        phone: companyData.cellphone,
-        email: companyData.email,
-        description: companyData.description,
-        role: companyData.role,
-        alias: companyData.alias,
-        workDays: companyData.workDays
-      });
+      setCompany(companyData);
     } catch (error) {
         console.error('Failed to fetch company details:', error);
         setError('Failed to fetch company details. Please try again.');
@@ -56,7 +39,6 @@ const useCompanyDetails = () => {
   }, [fetchCompanyDetails]);
 
   return {
-    user,
     company,
     isLoading,
     error,

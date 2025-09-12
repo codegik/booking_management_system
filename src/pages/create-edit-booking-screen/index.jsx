@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Button from '../../components/ui/Button';
 import Icon from '../../components/AppIcon';
+import RoleBasedHeader from "../../components/ui/RoleBasedHeader";
+import {handleLogout} from "../../utils/auth";
 
 const BookingManagementScreen = () => {
   const navigate = useNavigate();
   const [company, setCompany] = useState(null);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isSidebarCollapsed] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -107,35 +109,21 @@ const BookingManagementScreen = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-card border-b border-border shadow-soft">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-3">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate('/company-dashboard')}
-                className="p-2"
-              >
-                ←
-              </Button>
-            </div>
-            <div className="flex items-center space-x-3">
-              {company?.pictureUrl && (
-                <img src={company.pictureUrl} alt="Company" className="w-8 h-8 rounded-full object-cover" />
-              )}
-              <span className="text-sm text-muted-foreground">{company?.name}</span>
-            </div>
-          </div>
-        </div>
-      </header>
+        <RoleBasedHeader
+            company={company}
+            onLogout={() => handleLogout(navigate)}
+        />
       {/* Main Content */}
-      <main className={`max-w-7xl mx-auto px-4 py-8 ${isSidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'}`}>
-        <div className="mb-6 flex items-center justify-between">
-          <Button variant="outline" size="sm" onClick={handlePrevDay}>← Previous</Button>
-          <h1 className="text-2xl font-bold text-foreground">{formatDate(selectedDate)}</h1>
-          <Button variant="outline" size="sm" onClick={handleNextDay}>Next →</Button>
-        </div>
+      <main className="pt-20 max-w-4xl mx-auto px-4 py-8">
+          {/* Header Section */}
+          <div className="mb-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div>
+                      <h1 className="text-2xl font-bold text-foreground">Bookings</h1>
+                      <p className="text-muted-foreground">Manage your customer's bookings</p>
+                  </div>
+              </div>
+          </div>
         {/* Filter Buttons */}
         <div className="mb-4 flex gap-2">
           <Button

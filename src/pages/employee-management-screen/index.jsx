@@ -21,7 +21,7 @@ const EmployeeManagementScreen = () => {
   const [formErrors, setFormErrors] = useState({});
   const [error, setError] = useState(null);
 
-  const { user, company, fetchCompanyDetails } = useCompanyDetails();
+  const { company, fetchCompanyDetails } = useCompanyDetails();
 
   // Helper function to convert minutes to hour:minute format
   const formatDuration = (minutes) => {
@@ -442,11 +442,9 @@ const EmployeeManagementScreen = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <RoleBasedHeader
-        user={user}
         company={company}
         onLogout={handleLogout}
         onToggleSidebar={handleSidebarToggle}
-        isSidebarCollapsed={isSidebarCollapsed}
       />
 
       {/* Main Content */}

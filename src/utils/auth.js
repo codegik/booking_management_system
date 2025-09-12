@@ -55,3 +55,8 @@ export const makeAuthenticatedRequest = async (url, options = {}) => {
 
   return response;
 };
+
+export function handleLogout(navigate) {
+  clearAuthData();
+  navigate('/');
+}

@@ -18,7 +18,7 @@ const ServiceManagementScreen = () => {
   const [editingService, setEditingService] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all'); // 'all', 'active', 'inactive'
-  const { user, company, isLoading: isLoadingCompany, error: companyError, fetchCompanyDetails } = useCompanyDetails();
+  const { company, isLoading: isLoadingCompany, error: companyError, fetchCompanyDetails } = useCompanyDetails();
 
   // Duration options for the combobox
   const durationOptions = [
@@ -270,7 +270,6 @@ const ServiceManagementScreen = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <RoleBasedHeader
-        user={user}
         company={company}
         onLogout={handleLogout}
         onToggleSidebar={handleSidebarToggle}
