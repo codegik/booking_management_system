@@ -1,10 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, {useEffect, useState} from 'react';
+import {Link, useNavigate} from 'react-router-dom';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
 import RegistrationForm from './components/RegistrationForm';
-import { makeAuthenticatedRequest, markCompanyAsRegistered } from '../../utils/auth';
+import {
+    enhanceTokenAuth,
+    getAuthToken,
+    handleLogout,
+    makeAuthenticatedRequest,
+    markCompanyAsRegistered
+} from '../../utils/auth';
 import useCompanyDetails from '../../utils/useCompanyDetails';
+import RoleBasedHeader from "../../components/ui/RoleBasedHeader";
 
 const CompanyRegistrationScreen = () => {
   const navigate = useNavigate();
@@ -16,8 +23,8 @@ const CompanyRegistrationScreen = () => {
 
   const [formData, setFormData] = useState({
     // Company Details
-    companyName: '',
-    companyAlias: '',
+    name: '',
+    alias: '',
     phone: '',
     email: '',
     address: '',
@@ -82,9 +89,9 @@ const CompanyRegistrationScreen = () => {
   useEffect(() => {
     if (company) {
       setFormData({
-        companyName: company.name || '',
-        companyAlias: company.alias || '',
-        phone: company.phone || '',
+        name: company.name || '',
+        alias: company.alias || '',
+        phone: company.cellphone || '',
         email: company.email || '',
         address: company.address || '',
         description: company.description || '',
@@ -97,17 +104,17 @@ const CompanyRegistrationScreen = () => {
     const newErrors = {};
 
     // Company Alias validation
-    if (!formData?.companyAlias?.trim()) {
-      newErrors.companyAlias = 'Company Alias is required';
+    if (!formData?.alias?.trim()) {
+      newErrors.alias = 'Company Alias is required';
     } else {
       // Check if alias contains only alphanumeric characters (0-9, a-z, A-Z)
       const aliasRegex = /^[a-zA-Z0-9]+$/;
-      if (!aliasRegex.test(formData.companyAlias)) {
-        newErrors.companyAlias = 'Company Alias can only contain letters (a-z, A-Z) and numbers (0-9)';
-      } else if (formData.companyAlias.length < 3) {
-        newErrors.companyAlias = 'Company Alias must be at least 3 characters long';
-      } else if (formData.companyAlias.length > 20) {
-        newErrors.companyAlias = 'Company Alias must be no more than 20 characters long';
+      if (!aliasRegex.test(formData.alias)) {
+        newErrors.alias = 'Company Alias can only contain letters (a-z, A-Z) and numbers (0-9)';
+      } else if (formData.alias.length < 3) {
+        newErrors.alias = 'Company Alias must be at least 3 characters long';
+      } else if (formData.alias.length > 20) {
+        newErrors.alias = 'Company Alias must be no more than 20 characters long';
       }
     }
 
@@ -155,8 +162,8 @@ const CompanyRegistrationScreen = () => {
 
       // Prepare the request payload according to the API contract
       const registrationData = {
-        name: formData.companyName,
-        alias: formData.companyAlias.toLowerCase(), // Convert to lowercase for consistency
+        name: formData.name,
+        alias: formData.alias.toLowerCase(), // Convert to lowercase for consistency
         email: formData.email,
         cellphone: formData.phone,
         address: formData.address,
@@ -175,7 +182,7 @@ const CompanyRegistrationScreen = () => {
         const errorData = await response.json();
 
         if (response.status === 404) {
-          navigate('/');
+          handleLogout(navigate);
           return;
         }
 
@@ -183,14 +190,12 @@ const CompanyRegistrationScreen = () => {
           ? errorData.errors[0]
           : 'Registration failed';
 
-        if (errorMessage.toLowerCase().includes('cellphone') ||
-            errorMessage.toLowerCase().includes('phone') ||
+        if (errorMessage.toLowerCase().includes('phone') ||
             errorMessage.toLowerCase().includes('already exists') ||
             errorMessage.toLowerCase().includes('duplicate')) {
           setErrors({ phone: errorMessage });
-        } else if (errorMessage.toLowerCase().includes('alias') ||
-                   errorMessage.toLowerCase().includes('company alias')) {
-          setErrors({ companyAlias: errorMessage });
+        } else if (errorMessage.toLowerCase().includes('alias')) {
+          setErrors({ alias: errorMessage });
         } else {
           setErrors({ submit: errorMessage });
         }
@@ -198,6 +203,7 @@ const CompanyRegistrationScreen = () => {
       }
 
       await response.json();
+      await enhanceTokenAuth(getAuthToken());
       markCompanyAsRegistered();
 
       navigate('/company-dashboard');
@@ -212,28 +218,9 @@ const CompanyRegistrationScreen = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-card border-b border-border shadow-soft">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <Link to="/" className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <Icon name="Calendar" size={20} color="white" />
-              </div>
-              <span className="text-xl font-semibold text-foreground">
-                Booking Management System
-              </span>
-            </Link>
-            
-            <Link
-              to="/customer-dashboard"
-              className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-foreground transition-smooth"
-            >
-              <Icon name="ArrowLeft" size={16} />
-              <span>Back to Login</span>
-            </Link>
-          </div>
-        </div>
-      </header>
+        <RoleBasedHeader
+            company={company}
+        />
 
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

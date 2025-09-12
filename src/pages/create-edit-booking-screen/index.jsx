@@ -39,6 +39,13 @@ const BookingManagementScreen = () => {
       .catch(() => setError('Failed to load company info'));
   }, [jwtToken]);
 
+  // Redirect to company registration if company data is loaded and alias is missing
+  useEffect(() => {
+    if (company && !company.alias) {
+      navigate('/company-registration');
+    }
+  }, [company, navigate]);
+
   // Fetch bookings for selected date
   useEffect(() => {
     const fetchBookings = async () => {
@@ -111,7 +118,6 @@ const BookingManagementScreen = () => {
       {/* Header */}
         <RoleBasedHeader
             company={company}
-            onLogout={() => handleLogout(navigate)}
         />
       {/* Main Content */}
       <main className="pt-20 max-w-4xl mx-auto px-4 py-8">

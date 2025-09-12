@@ -31,7 +31,7 @@ const RegistrationForm = ({ formData, setFormData, errors = {} }) => {
   const handleAliasChange = (value) => {
     // Remove any non-alphanumeric characters but keep original case
     const cleanedValue = value.replace(/[^a-zA-Z0-9]/g, '');
-    handleInputChange('companyAlias', cleanedValue);
+    handleInputChange('alias', cleanedValue);
   };
 
   // Business Hours logic
@@ -102,9 +102,9 @@ const RegistrationForm = ({ formData, setFormData, errors = {} }) => {
             label="Company Name"
             type="text"
             placeholder="Enter your company name"
-            value={formData?.companyName || ''}
+            value={formData?.name || ''}
             onChange={(e) => handleInputChange('companyName', e?.target?.value)}
-            error={errors?.companyName}
+            error={errors?.name}
             required
             className="lg:col-span-2"
             disabled={true}
@@ -126,9 +126,9 @@ const RegistrationForm = ({ formData, setFormData, errors = {} }) => {
             label="Company Alias"
             type="text"
             placeholder="mycompany123"
-            value={formData?.companyAlias || ''}
+            value={formData?.alias || ''}
             onChange={(e) => handleAliasChange(e?.target?.value)}
-            error={errors?.companyAlias}
+            error={errors?.alias}
             required
             className="lg:col-span-2"
             ref={aliasInputRef}

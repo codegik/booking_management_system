@@ -70,6 +70,12 @@ const ServiceManagementScreen = () => {
     fetchServices();
   }, [navigate, fetchCompanyDetails]);
 
+  useEffect(() => {
+    if (company && !company.alias) {
+      navigate('/company-registration');
+    }
+  }, [company, navigate]);
+
   const fetchServices = async () => {
     try {
       setIsLoading(true);
@@ -271,9 +277,6 @@ const ServiceManagementScreen = () => {
       {/* Header */}
       <RoleBasedHeader
         company={company}
-        onLogout={handleLogout}
-        onToggleSidebar={handleSidebarToggle}
-        isSidebarCollapsed={isSidebarCollapsed}
       />
 
       {/* Main Content */}

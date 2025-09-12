@@ -2,10 +2,10 @@ import React, {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 import Icon from '../AppIcon';
 import Button from './Button';
+import {handleLogout} from '../../utils/auth';
 
 const RoleBasedHeader = ({ 
-  company = null,
-  onLogout = () => {}
+  company = null
 }) => {
   const navigate = useNavigate();
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
@@ -14,10 +14,6 @@ const RoleBasedHeader = ({
     setIsProfileMenuOpen(!isProfileMenuOpen);
   };
 
-  const handleLogout = () => {
-    onLogout();
-    navigate('/company-registration-screen');
-  };
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-card border-b border-border shadow-soft">
@@ -71,7 +67,7 @@ const RoleBasedHeader = ({
                   <button
                     onClick={() => {
                       setIsProfileMenuOpen(false);
-                      // Handle settings navigation
+                      navigate('/company-registration-screen');
                     }}
                     className="flex items-center w-full px-4 py-2 text-sm text-foreground hover:bg-muted transition-smooth"
                   >
@@ -80,7 +76,7 @@ const RoleBasedHeader = ({
                   </button>
                   <div className="border-t border-border">
                     <button
-                      onClick={handleLogout}
+                      onClick={() => handleLogout(navigate)}
                       className="flex items-center w-full px-4 py-2 text-sm text-error hover:bg-muted transition-smooth"
                     >
                       <Icon name="LogOut" size={16} className="mr-2" />

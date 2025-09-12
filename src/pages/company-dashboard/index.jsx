@@ -50,8 +50,8 @@ const CompanyDashboard = () => {
     const isAuthenticated = localStorage.getItem('isAuthenticated');
 
     if (!token || !isAuthenticated || isAuthenticated !== 'true') {
-      navigate('/');
-      return;
+        handleLogout(navigate);
+        return;
     }
 
     // Fetch company details from API
@@ -68,9 +68,11 @@ const CompanyDashboard = () => {
     }
   }, [isLoading, company]);
 
-  const handleSidebarToggle = () => {
-    setIsSidebarCollapsed(!isSidebarCollapsed);
-  };
+  useEffect(() => {
+    if (!isLoading && company && !company.alias) {
+      navigate('/company-registration');
+    }
+  }, [isLoading, company, navigate]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -85,8 +87,6 @@ const CompanyDashboard = () => {
         </Button>
       <RoleBasedHeader
         company={company}
-        onLogout={() => handleLogout(navigate)}
-        onToggleSidebar={handleSidebarToggle}
       />
       {/* Main Content */}
       <main className={`pt-16 transition-all duration-300 ease-in-out ${

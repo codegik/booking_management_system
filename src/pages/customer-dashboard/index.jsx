@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, {useEffect, useState} from 'react';
+import {useNavigate} from 'react-router-dom';
 import Button from '../../components/ui/Button';
 
 const CustomerDashboard = () => {
@@ -35,6 +35,11 @@ const CustomerDashboard = () => {
     localStorage.removeItem('jwtToken');
     localStorage.removeItem('customerName');
     localStorage.removeItem('selectedCompanyId');
+    localStorage.removeItem('isAuthenticated');
+    localStorage.removeItem('jwtTokenExpiresAt');
+    localStorage.removeItem('customerCellphone');
+    localStorage.removeItem('customerId');
+    localStorage.removeItem('customerName');
 
     // Redirect to company home page using alias
     if (company?.alias) {

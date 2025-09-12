@@ -1,27 +1,10 @@
-import React, {useState, useEffect} from 'react';
+import React, {useEffect, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
-import {isCompanyRegistered, clearAuthData} from '../../utils/auth';
+import {enhanceTokenAuth, handleLogout, isCompanyRegistered, registerAuthToken} from '../../utils/auth';
 import useGoogleAuth from '../../utils/useGoogleAuth';
 
-// Helper function to decode JWT token
-const decodeJWT = (token) => {
-  try {
-    const base64Url = token.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(
-      atob(base64)
-        .split('')
-        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-        .join('')
-    );
-    return JSON.parse(jsonPayload);
-  } catch (error) {
-    console.error('Failed to decode JWT token:', error);
-    return null;
-  }
-};
 
 const SocialLoginScreen = () => {
   const navigate = useNavigate();
@@ -50,31 +33,16 @@ const SocialLoginScreen = () => {
 
     try {
       const googleAuthResult = await signInWithGoogle();
-      const response = await fetch('/api/auth/google', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ token: googleAuthResult.credential })
-      });
+      const response = await enhanceTokenAuth(googleAuthResult.credential);
 
       if (!response.ok) {
-        clearAuthData();
-        navigate('/');
+        handleLogout(navigate);
       } else {
           const tokenData = await response.json();
-          const decodedToken = decodeJWT(tokenData.token);
-
-          localStorage.setItem('isAuthenticated', 'true');
-          localStorage.setItem('authProvider', 'google');
-          localStorage.setItem('jwtToken', tokenData.token);
-          localStorage.setItem('userEmail', decodedToken.email);
-          localStorage.setItem('userName', decodedToken.name);
-          localStorage.setItem('userPicture', decodedToken.pictureUrl);
-          localStorage.setItem('userRole', decodedToken.role);
+          const isRegistered = registerAuthToken(tokenData.token);
 
           // Check if company is already registered and redirect accordingly
-          if (isCompanyRegistered()) {
+          if (isRegistered === true) {
               navigate('/company-dashboard');
           } else {
               navigate('/company-registration-screen');

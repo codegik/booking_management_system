@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, {useEffect, useState} from 'react';
+import {useNavigate} from 'react-router-dom';
 import RoleBasedHeader from '../../components/ui/RoleBasedHeader';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import useCompanyDetails from '../../utils/useCompanyDetails';
 import Icon from '../../components/AppIcon';
-import { makeAuthenticatedRequest, clearAuthData } from '../../utils/auth';
-import { maskPhone, validatePhone } from '../../utils/phoneFormatter';
+import {clearAuthData, makeAuthenticatedRequest} from '../../utils/auth';
+import {maskPhone, validatePhone} from '../../utils/phoneFormatter';
 
 const EmployeeManagementScreen = () => {
   const navigate = useNavigate();
@@ -109,6 +109,12 @@ const EmployeeManagementScreen = () => {
     fetchEmployees();
     fetchAvailableWorks();
   }, [fetchCompanyDetails]);
+
+  useEffect(() => {
+    if (company && !company.alias) {
+      navigate('/company-registration');
+    }
+  }, [company, navigate]);
 
   // Email validation function
   const validateEmail = (email) => {
@@ -411,9 +417,6 @@ const EmployeeManagementScreen = () => {
     navigate('/');
   };
 
-  const handleSidebarToggle = () => {
-    setIsSidebarCollapsed(!isSidebarCollapsed);
-  };
 
   // Filter employees
   const filteredEmployees = employees.filter(employee => {
@@ -443,8 +446,6 @@ const EmployeeManagementScreen = () => {
       {/* Header */}
       <RoleBasedHeader
         company={company}
-        onLogout={handleLogout}
-        onToggleSidebar={handleSidebarToggle}
       />
 
       {/* Main Content */}
