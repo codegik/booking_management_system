@@ -57,71 +57,9 @@ const RoleBasedHeader = ({
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-card border-b border-border shadow-soft">
       <div className="flex items-center justify-between h-16 px-4 lg:px-6">
-        {/* Left Section - Logo and Navigation */}
-        <div className="flex items-center space-x-4">
-          {/* Sidebar Toggle (Admin only) */}
-          {user?.role === 'admin' && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onToggleSidebar}
-              className="lg:hidden"
-            >
-              <Icon name="Menu" size={20} />
-            </Button>
-          )}
-
-          {/* Logo */}
-          <Link to={user?.role === 'admin' ? '/company-dashboard' : '/customer-dashboard'} className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <Icon name="Calendar" size={20} color="white" />
-            </div>
-            <span className="text-xl font-semibold text-foreground hidden sm:block">
-              {company?.name}
-            </span>
-          </Link>
-
-          {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center space-x-1 ml-8">
-            {navigationItems?.map((item) => (
-              <Link
-                key={item?.path}
-                to={item?.path}
-                className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-smooth ${
-                  isActiveRoute(item?.path)
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-                }`}
-              >
-                <Icon name={item?.icon} size={16} />
-                <span>{item?.label}</span>
-              </Link>
-            ))}
-          </nav>
-        </div>
 
         {/* Right Section - Actions and Profile */}
         <div className="flex items-center space-x-3">
-          {/* Notifications */}
-          {notifications?.count > 0 && (
-            <Button variant="ghost" size="icon" className="relative">
-              <Icon name="Bell" size={20} />
-              <span className="absolute -top-1 -right-1 bg-error text-error-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                {notifications?.count > 9 ? '9+' : notifications?.count}
-              </span>
-            </Button>
-          )}
-
-          {/* Mobile Menu Toggle */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleMobileMenuToggle}
-            className="lg:hidden"
-          >
-            <Icon name="Menu" size={20} />
-          </Button>
-
           {/* Profile Menu */}
           <div className="relative">
             <Button

@@ -1,74 +1,60 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 
 const BookingCalendarWidget = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [bookings, setBookings] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  // Mock booking data for today
-  const todaysBookings = [
-    {
-      id: 1,
-      time: "09:00",
-      customer: "Sarah Johnson",
-      service: "Hair Cut & Style",
-      employee: "Emma Wilson",
-      status: "confirmed",
-      duration: 60,
-      price: 85
-    },
-    {
-      id: 2,
-      time: "10:30",
-      customer: "Michael Brown",
-      service: "Beard Trim",
-      employee: "James Smith",
-      status: "pending",
-      duration: 30,
-      price: 35
-    },
-    {
-      id: 3,
-      time: "11:00",
-      customer: "Lisa Davis",
-      service: "Color Treatment",
-      employee: "Emma Wilson",
-      status: "confirmed",
-      duration: 120,
-      price: 150
-    },
-    {
-      id: 4,
-      time: "14:00",
-      customer: "Robert Taylor",
-      service: "Full Service",
-      employee: "James Smith",
-      status: "completed",
-      duration: 90,
-      price: 120
-    },
-    {
-      id: 5,
-      time: "15:30",
-      customer: "Amanda White",
-      service: "Manicure",
-      employee: "Sophie Chen",
-      status: "confirmed",
-      duration: 45,
-      price: 45
-    }
-  ];
+  // Load jwtToken from localStorage
+  const jwtToken = localStorage.getItem('jwtToken');
+
+  // Helper for fetch with auth
+  const fetchWithAuth = (url, options = {}) => {
+    const headers = {
+      ...(options.headers || {}),
+      ...(jwtToken ? { Authorization: `Bearer ${jwtToken}` } : {})
+    };
+    return fetch(url, { ...options, headers });
+  };
+
+  // Fetch bookings for the company for the selected date
+  useEffect(() => {
+    const fetchBookings = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const dateString = selectedDate.toISOString().split('T')[0];
+        const response = await fetchWithAuth(`/api/company/bookings?startDate=${dateString}&endDate=${dateString}`);
+        if (!response.ok) throw new Error('Failed to load bookings');
+        const data = await response.json();
+        // The response is an array of objects, each with a date and bookings array
+        const entry = data.find(d => d.date === dateString);
+        setBookings(entry?.bookings || []);
+      } catch (err) {
+        setError(err.message || 'Failed to load bookings');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchBookings();
+  }, [selectedDate, jwtToken]);
+
+  // Bookings are already filtered by date from the API response
+  const todaysBookings = bookings;
 
   const getStatusColor = (status) => {
-    switch (status) {
-      case 'confirmed':
+    switch (status?.toUpperCase()) {
+      case 'CONFIRMED':
         return 'bg-success/10 text-success border-success/20';
-      case 'pending':
+      case 'PENDING':
         return 'bg-warning/10 text-warning border-warning/20';
-      case 'completed':
+      case 'COMPLETED':
         return 'bg-accent/10 text-accent border-accent/20';
-      case 'cancelled':
+      case 'CANCELLED':
         return 'bg-error/10 text-error border-error/20';
       default:
         return 'bg-muted text-muted-foreground border-border';
@@ -79,7 +65,7 @@ const BookingCalendarWidget = () => {
     return date?.toLocaleDateString('en-US', {
       weekday: 'long',
       year: 'numeric',
-      month: 'long',
+      month: 'short',
       day: 'numeric'
     });
   };
@@ -103,26 +89,30 @@ const BookingCalendarWidget = () => {
   return (
     <div className="bg-card border border-border rounded-lg p-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h3 className="text-lg font-semibold text-foreground">Today's Schedule</h3>
-          <p className="text-sm text-muted-foreground">{formatDate(selectedDate)}</p>
-        </div>
         <div className="flex items-center space-x-2">
           <Button variant="outline" size="sm" onClick={goToPreviousDay}>
             <Icon name="ChevronLeft" size={16} />
           </Button>
-          <Button variant="outline" size="sm" onClick={goToToday}>
-            Today
-          </Button>
+              <div>
+                  <p className="text-sm text-muted-foreground">{formatDate(selectedDate)}</p>
+              </div>
           <Button variant="outline" size="sm" onClick={goToNextDay}>
             <Icon name="ChevronRight" size={16} />
           </Button>
         </div>
-      </div>
       {/* Bookings List */}
       <div className="space-y-3 max-h-96 overflow-y-auto">
-        {todaysBookings?.length > 0 ? (
+        {loading ? (
+          <div className="text-center py-8">
+            <Icon name="Loader" size={32} className="animate-spin text-muted-foreground mx-auto mb-4" />
+            <p className="text-muted-foreground">Loading bookings...</p>
+          </div>
+        ) : error ? (
+          <div className="text-center py-8">
+            <Icon name="AlertCircle" size={32} className="text-error mx-auto mb-4" />
+            <p className="text-error">{error}</p>
+          </div>
+        ) : todaysBookings?.length > 0 ? (
           todaysBookings?.map((booking) => (
             <div
               key={booking?.id}
@@ -130,21 +120,21 @@ const BookingCalendarWidget = () => {
             >
               <div className="flex items-center space-x-4">
                 <div className="text-center">
-                  <p className="text-sm font-semibold text-foreground">{booking?.time}</p>
-                  <p className="text-xs text-muted-foreground">{booking?.duration}min</p>
+                  <p className="text-sm font-semibold text-foreground">{booking?.startDateTime ? new Date(booking.startDateTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : ''}</p>
+                  <p className="text-xs text-muted-foreground">{booking?.stopDateTime && booking?.startDateTime ? `${Math.round((new Date(booking.stopDateTime) - new Date(booking.startDateTime)) / 60000)}min` : ''}</p>
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-foreground truncate">
-                    {booking?.customer}
+                    {booking?.customerName}
                   </p>
                   <p className="text-xs text-muted-foreground truncate">
-                    {booking?.service} • {booking?.employee}
+                    {booking?.workName} • {booking?.employeeName}
                   </p>
                 </div>
               </div>
               <div className="flex items-center space-x-3">
                 <span className="text-sm font-medium text-foreground">
-                  ${booking?.price}
+                  {booking?.price ? `$${(booking.price / 100).toFixed(2)}` : ''}
                 </span>
                 <span className={`px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(booking?.status)}`}>
                   {booking?.status}
@@ -164,15 +154,10 @@ const BookingCalendarWidget = () => {
         <p className="text-sm text-muted-foreground">
           {todaysBookings?.length} appointments today
         </p>
-        <Link to="/create-edit-booking-screen">
-          <Button variant="outline" size="sm">
-            <Icon name="Plus" size={16} className="mr-2" />
-            New Booking
-          </Button>
-        </Link>
       </div>
     </div>
   );
 };
 
 export default BookingCalendarWidget;
+

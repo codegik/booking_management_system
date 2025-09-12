@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import RoleBasedHeader from '../../components/ui/RoleBasedHeader';
-import AdminSidebar from '../../components/ui/AdminSidebar';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import useCompanyDetails from '../../utils/useCompanyDetails';
@@ -448,13 +447,6 @@ const EmployeeManagementScreen = () => {
         onLogout={handleLogout}
         onToggleSidebar={handleSidebarToggle}
         isSidebarCollapsed={isSidebarCollapsed}
-      />
-
-      {/* Sidebar */}
-      <AdminSidebar
-        isCollapsed={isSidebarCollapsed}
-        onToggle={handleSidebarToggle}
-        user={user}
       />
 
       {/* Main Content */}

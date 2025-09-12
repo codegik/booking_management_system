@@ -5,7 +5,6 @@ import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Select from '../../components/ui/Select';
 import RoleBasedHeader from '../../components/ui/RoleBasedHeader';
-import AdminSidebar from '../../components/ui/AdminSidebar';
 import { clearAuthData, makeAuthenticatedRequest } from '../../utils/auth';
 import useCompanyDetails from '../../utils/useCompanyDetails';
 
@@ -276,13 +275,6 @@ const ServiceManagementScreen = () => {
         onLogout={handleLogout}
         onToggleSidebar={handleSidebarToggle}
         isSidebarCollapsed={isSidebarCollapsed}
-      />
-
-      {/* Sidebar */}
-      <AdminSidebar
-        isCollapsed={isSidebarCollapsed}
-        onToggle={handleSidebarToggle}
-        user={user}
       />
 
       {/* Main Content */}

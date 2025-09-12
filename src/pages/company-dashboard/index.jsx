@@ -2,12 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Icon from '../../components/AppIcon';
 import RoleBasedHeader from '../../components/ui/RoleBasedHeader';
-import AdminSidebar from '../../components/ui/AdminSidebar';
 import BookingStatusIndicator from '../../components/ui/BookingStatusIndicator';
 import MetricsCard from './components/MetricsCard';
 import BookingCalendarWidget from './components/BookingCalendarWidget';
-import RecentActivityFeed from './components/RecentActivityFeed';
-import QuickActionsPanel from './components/QuickActionsPanel';
 import { clearAuthData, makeAuthenticatedRequest } from '../../utils/auth';
 import useCompanyDetails from '../../utils/useCompanyDetails';
 
@@ -94,12 +91,6 @@ const CompanyDashboard = () => {
         onLogout={handleLogout}
         onToggleSidebar={handleSidebarToggle}
         isSidebarCollapsed={isSidebarCollapsed}
-      />
-      {/* Sidebar */}
-      <AdminSidebar
-        isCollapsed={isSidebarCollapsed}
-        onToggle={handleSidebarToggle}
-        user={user}
       />
       {/* Main Content */}
       <main className={`pt-16 transition-all duration-300 ease-in-out ${
@@ -196,73 +187,6 @@ const CompanyDashboard = () => {
                 {/* Booking Calendar Widget */}
                 <div className="lg:col-span-6">
                   <BookingCalendarWidget />
-                </div>
-
-                {/* Recent Activity Feed */}
-                <div className="lg:col-span-3">
-                  <RecentActivityFeed />
-                </div>
-
-                {/* Quick Actions Panel */}
-                <div className="lg:col-span-3">
-                  <QuickActionsPanel />
-                </div>
-              </div>
-
-              {/* Additional Stats Section */}
-              <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-card border border-border rounded-lg p-6">
-                  <h4 className="text-lg font-semibold text-foreground mb-4">Weekly Overview</h4>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">Bookings</span>
-                      <span className="text-sm font-medium text-foreground">142</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">Revenue</span>
-                      <span className="text-sm font-medium text-foreground">$12,450</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">New Customers</span>
-                      <span className="text-sm font-medium text-foreground">18</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-card border border-border rounded-lg p-6">
-                  <h4 className="text-lg font-semibold text-foreground mb-4">Popular Services</h4>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">Hair Cut & Style</span>
-                      <span className="text-sm font-medium text-foreground">45%</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">Color Treatment</span>
-                      <span className="text-sm font-medium text-foreground">28%</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">Manicure</span>
-                      <span className="text-sm font-medium text-foreground">18%</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-card border border-border rounded-lg p-6">
-                  <h4 className="text-lg font-semibold text-foreground mb-4">Employee Performance</h4>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">Emma Wilson</span>
-                      <span className="text-sm font-medium text-foreground">98%</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">James Smith</span>
-                      <span className="text-sm font-medium text-foreground">95%</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">Sophie Chen</span>
-                      <span className="text-sm font-medium text-foreground">92%</span>
-                    </div>
-                  </div>
                 </div>
               </div>
             </>
