@@ -70,7 +70,7 @@ const BookingManagementScreen = () => {
     fetchBookings();
   }, [selectedDate, jwtToken]);
 
-  const formatDate = (date) => date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' });
+  const formatDate = (date) => date.toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
   const formatTime = (dateTimeString) => {
     const date = new Date(dateTimeString);
     return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
@@ -116,131 +116,153 @@ const BookingManagementScreen = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-        <CompanyHeader
-            company={company}
-        />
+        <CompanyHeader company={company} />
       {/* Main Content */}
       <main className="pt-20 max-w-4xl mx-auto px-4 py-8">
           {/* Header Section */}
           <div className="mb-6">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                  <div>
-                      <h1 className="text-2xl font-bold text-foreground">Bookings</h1>
-                      <p className="text-muted-foreground">Manage your customer's bookings</p>
-                  </div>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h1 className="text-2xl font-bold text-foreground">Bookings</h1>
+                <p className="text-muted-foreground">Manage your customer's bookings</p>
               </div>
+            </div>
           </div>
-        {/* Filter Buttons */}
-        <div className="mb-4 flex gap-2">
-          <Button
-            variant={filterStatus === 'all' ? 'default' : 'outline'}
-            size="sm"
-            className="flex items-center gap-1 h-8 px-2 text-xs"
-            onClick={() => setFilterStatus('all')}
-          >
-            <Icon name="List" size={14} />
-            <span>All</span>
-            <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full bg-primary/10 text-primary font-bold text-xs">{allCount}</span>
-          </Button>
-          <Button
-            variant={filterStatus === 'active' ? 'default' : 'outline'}
-            size="sm"
-            className="flex items-center gap-1 h-8 px-2 text-xs"
-            onClick={() => setFilterStatus('active')}
-          >
-            <Icon name="CheckCircle" size={14} className="text-success" />
-            <span>Active</span>
-            <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full bg-success/10 text-success font-bold text-xs">{activeCount}</span>
-          </Button>
-          <Button
-            variant={filterStatus === 'inactive' ? 'default' : 'outline'}
-            size="sm"
-            className="flex items-center gap-1 h-8 px-2 text-xs"
-            onClick={() => setFilterStatus('inactive')}
-          >
-            <Icon name="XCircle" size={14} className="text-error" />
-            <span>Inactive</span>
-            <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full bg-error/10 text-error font-bold text-xs">{inactiveCount}</span>
-          </Button>
-        </div>
-        {/* Filtered Bookings List */}
-        {loading ? (
-          <div className="text-center py-8">Loading...</div>
-        ) : error ? (
-          <div className="text-center py-8 text-error">{error}</div>
-        ) : bookings.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">No bookings for this day.</div>
-        ) : (
-          <div className="space-y-4">
-            {bookings
-              .filter(booking => {
-                if (filterStatus === 'all') return true;
-                if (filterStatus === 'active') return booking.status === 'CONFIRMED';
-                if (filterStatus === 'inactive') return booking.status === 'CANCELLED';
-                return true;
-              })
-              .map(booking => (
-                <div key={booking.id} className="bg-card border border-border rounded-lg p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                  <div className="flex-1 min-w-0 flex items-center gap-4">
-                    {/* Work picture */}
-                    {booking.workPictureUrl ? (
-                      <img
-                        src={booking.workPictureUrl}
-                        alt={booking.workName}
-                        className="w-12 h-12 rounded object-cover border border-border"
-                        onError={e => { e.target.onerror = null; e.target.src = '/assets/images/no_image.png'; }}
-                      />
-                    ) : (
-                      <img
-                        src="/assets/images/no_image.png"
-                        alt="No work picture"
-                        className="w-12 h-12 rounded object-cover border border-border"
-                      />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-lg text-foreground">{booking.workName}</div>
-                      <div className="text-sm text-muted-foreground">Customer: {booking.customerName}</div>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        {/* Employee picture */}
-                        {booking.employeePictureUrl ? (
-                          <img
-                            src={booking.employeePictureUrl}
-                            alt={booking.employeeName}
-                            className="w-8 h-8 rounded-full object-cover border border-border"
-                            onError={e => { e.target.onerror = null; e.target.src = '/assets/images/no_image.png'; }}
-                          />
-                        ) : (
-                          <img
-                            src="/assets/images/no_image.png"
-                            alt="No employee picture"
-                            className="w-8 h-8 rounded-full object-cover border border-border"
-                          />
-                        )}
-                        <span>{booking.employeeName}</span>
+          {/* Day Navigation Bar */}
+          <div className="mb-4 flex items-center justify-start gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-1 h-8 px-2 text-xs"
+              onClick={handlePrevDay}
+            >
+              <Icon name="ChevronLeft" size={16} />
+              <span>Previous</span>
+            </Button>
+            <span className="font-semibold text-base text-foreground px-2">
+              {formatDate(selectedDate)}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-1 h-8 px-2 text-xs"
+              onClick={handleNextDay}
+            >
+              <span>Next</span>
+              <Icon name="ChevronRight" size={16} />
+            </Button>
+          </div>
+          {/* Filter Buttons */}
+          <div className="mb-4 flex gap-2">
+            <Button
+              variant={filterStatus === 'all' ? 'default' : 'outline'}
+              size="sm"
+              className="flex items-center gap-1 h-8 px-2 text-xs"
+              onClick={() => setFilterStatus('all')}
+            >
+              <Icon name="List" size={14} />
+              <span>All</span>
+              <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full bg-primary/10 text-primary font-bold text-xs">{allCount}</span>
+            </Button>
+            <Button
+              variant={filterStatus === 'active' ? 'default' : 'outline'}
+              size="sm"
+              className="flex items-center gap-1 h-8 px-2 text-xs"
+              onClick={() => setFilterStatus('active')}
+            >
+              <Icon name="CheckCircle" size={14} className="text-success" />
+              <span>Active</span>
+              <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full bg-success/10 text-success font-bold text-xs">{activeCount}</span>
+            </Button>
+            <Button
+              variant={filterStatus === 'inactive' ? 'default' : 'outline'}
+              size="sm"
+              className="flex items-center gap-1 h-8 px-2 text-xs"
+              onClick={() => setFilterStatus('inactive')}
+            >
+              <Icon name="XCircle" size={14} className="text-error" />
+              <span>Inactive</span>
+              <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full bg-error/10 text-error font-bold text-xs">{inactiveCount}</span>
+            </Button>
+          </div>
+          {/* Filtered Bookings List */}
+          {loading ? (
+            <div className="text-center py-8">Loading...</div>
+          ) : error ? (
+            <div className="text-center py-8 text-error">{error}</div>
+          ) : bookings.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">No bookings for this day.</div>
+          ) : (
+            <div className="space-y-4">
+              {bookings
+                .filter(booking => {
+                  if (filterStatus === 'all') return true;
+                  if (filterStatus === 'active') return booking.status === 'CONFIRMED';
+                  if (filterStatus === 'inactive') return booking.status === 'CANCELLED';
+                  return true;
+                })
+                .map(booking => (
+                  <div key={booking.id} className="bg-card border border-border rounded-lg p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div className="flex-1 min-w-0 flex items-center gap-4">
+                      {/* Work picture */}
+                      {booking.workPictureUrl ? (
+                        <img
+                          src={booking.workPictureUrl}
+                          alt={booking.workName}
+                          className="w-12 h-12 rounded object-cover border border-border"
+                          onError={e => { e.target.onerror = null; e.target.src = '/assets/images/no_image.png'; }}
+                        />
+                      ) : (
+                        <img
+                          src="/assets/images/no_image.png"
+                          alt="No work picture"
+                          className="w-12 h-12 rounded object-cover border border-border"
+                        />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-lg text-foreground">{booking.workName}</div>
+                        <div className="text-sm text-muted-foreground">Customer: {booking.customerName}</div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          {/* Employee picture */}
+                          {booking.employeePictureUrl ? (
+                            <img
+                              src={booking.employeePictureUrl}
+                              alt={booking.employeeName}
+                              className="w-8 h-8 rounded-full object-cover border border-border"
+                              onError={e => { e.target.onerror = null; e.target.src = '/assets/images/no_image.png'; }}
+                            />
+                          ) : (
+                            <img
+                              src="/assets/images/no_image.png"
+                              alt="No employee picture"
+                              className="w-8 h-8 rounded-full object-cover border border-border"
+                            />
+                          )}
+                          <span>{booking.employeeName}</span>
+                        </div>
+                        <div className="text-sm text-muted-foreground">Time: {formatTime(booking.startDateTime)} - {formatTime(booking.stopDateTime)}</div>
                       </div>
-                      <div className="text-sm text-muted-foreground">Time: {formatTime(booking.startDateTime)} - {formatTime(booking.stopDateTime)}</div>
+                    </div>
+                    <div className="flex flex-col items-end gap-2">
+                      <span className={`px-2 py-1 text-xs rounded-full border ${booking.status === 'CONFIRMED' ? 'bg-green-50 text-green-600 border-green-200' : booking.status === 'CANCELLED' ? 'bg-red-50 text-red-600 border-red-200' : booking.status === 'COMPLETED' ? 'bg-blue-50 text-blue-600 border-blue-200' : 'bg-gray-50 text-gray-600 border-gray-200'}`}>{booking.status}</span>
+                      {booking.status === 'CONFIRMED' && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex items-center space-x-1"
+                          onClick={() => handleCancelBooking(booking.id, booking.customerId)}
+                          disabled={cancellingBookingId === booking.id}
+                        >
+                          <Icon name="X" size={14} />
+                          <span>{cancellingBookingId === booking.id ? 'Cancelling...' : 'Cancel'}</span>
+                        </Button>
+                      )}
                     </div>
                   </div>
-                  <div className="flex flex-col items-end gap-2">
-                    <span className={`px-2 py-1 text-xs rounded-full border ${booking.status === 'CONFIRMED' ? 'bg-green-50 text-green-600 border-green-200' : booking.status === 'CANCELLED' ? 'bg-red-50 text-red-600 border-red-200' : booking.status === 'COMPLETED' ? 'bg-blue-50 text-blue-600 border-blue-200' : 'bg-gray-50 text-gray-600 border-gray-200'}`}>{booking.status}</span>
-                    {booking.status === 'CONFIRMED' && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex items-center space-x-1"
-                        onClick={() => handleCancelBooking(booking.id, booking.customerId)}
-                        disabled={cancellingBookingId === booking.id}
-                      >
-                        <Icon name="X" size={14} />
-                        <span>{cancellingBookingId === booking.id ? 'Cancelling...' : 'Cancel'}</span>
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            {cancelError && <div className="text-error text-center mt-2">{cancelError}</div>}
-          </div>
-        )}
+                ))}
+              {cancelError && <div className="text-error text-center mt-2">{cancelError}</div>}
+            </div>
+          )}
       </main>
     </div>
   );

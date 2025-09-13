@@ -47,67 +47,8 @@ const EmployeeManagementScreen = () => {
     profileImagePreview: null
   });
 
-  // Fetch employees from API
-  const fetchEmployees = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      const response = await makeAuthenticatedRequest('/api/company/employees/work-assignments');
-
-      if (response.ok) {
-        const employees = await response.json();
-        const transformedEmployees = employees.map((employee) => ({
-          id: employee.id,
-          name: employee.name,
-          email: employee.email,
-          phone: employee.cellphone,
-          status: employee.isActive ? 'active' : 'inactive',
-          assignedWorks: employee.assignedWorks?.map((work) => work.id) || [],
-          pictureUrl: employee.pictureUrl
-        }));
-        setEmployees(transformedEmployees);
-      } else if (response.status === 401) {
-        clearAuthData();
-        navigate('/', { replace: true });
-      }
-    } catch (error) {
-      console.error('Error fetching employees:', error);
-      setError('Failed to load employees');
-      if (error.message?.includes('Authentication expired')) {
-        navigate('/', { replace: true });
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Fetch available works/services from API
-  const fetchAvailableWorks = async () => {
-    try {
-      const response = await makeAuthenticatedRequest('/api/work/all');
-
-      if (response.ok) {
-        const works = await response.json();
-        const transformedWorks = works
-          .map(work => ({
-            id: work.id,
-            name: work.name,
-            price: work.price / 100,
-            durationMinutes: work.durationMinutes,
-            isActive: work.isActive
-          }));
-        setAvailableWorks(transformedWorks);
-      }
-    } catch (error) {
-      console.error('Error fetching works:', error);
-    }
-  };
-
   useEffect(() => {
     fetchCompanyDetails();
-    fetchEmployees();
-    fetchAvailableWorks();
   }, [fetchCompanyDetails]);
 
   useEffect(() => {

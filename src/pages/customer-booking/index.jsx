@@ -136,7 +136,7 @@ const CustomerBooking = () => {
         throw new Error(errorMessage);
       }
 
-      setSuccessMessage(`Booking confirmed! ${availability.workName} with ${availability.employeeName} at ${formatTime(selectedSlot.startDateTime)} on ${selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}`);
+      setSuccessMessage(`Booking confirmed! ${availability.workName} with ${availability.employeeName} at ${formatTime(selectedSlot.startDateTime)} on ${selectedDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}`);
       setShowSuccess(true);
 
       // Reset selection and refresh availability
@@ -413,9 +413,9 @@ const CustomerBooking = () => {
                         <div className="text-muted-foreground">Duration: {availability.durationMinutes} minutes</div>
                         <div className="text-muted-foreground">
                           {selectedDate.toLocaleDateString('en-US', {
-                            weekday: 'long',
+                            weekday: 'short',
                             year: 'numeric',
-                            month: 'long',
+                            month: 'short',
                             day: 'numeric'
                           })}
                         </div>
@@ -435,8 +435,8 @@ const CustomerBooking = () => {
                       <h3 className="text-lg font-medium text-foreground mb-2">No Available Times</h3>
                       <p className="text-muted-foreground mb-4">
                         {availability?.employeeName
-                          ? `Sorry, ${availability.employeeName} has no available appointments on ${selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}.`
-                          : `No appointments are available for the selected date ${selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}.`
+                          ? `Sorry, ${availability.employeeName} has no available appointments on ${selectedDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}.`
+                          : `No appointments are available for the selected date ${selectedDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}.`
                         }
                       </p>
                       <div className="space-y-2 text-sm text-muted-foreground">
@@ -521,7 +521,7 @@ const CustomerBooking = () => {
             <div className="text-sm text-muted-foreground mb-4">
               <p>Service: <span className="font-medium">{availability.workName}</span></p>
               <p>Professional: <span className="font-medium">{availability.employeeName}</span></p>
-              <p>Date: <span className="font-medium">{selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</span></p>
+              <p>Date: <span className="font-medium">{selectedDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</span></p>
               <p>Time: <span className="font-medium">{formatTime(selectedSlot.startDateTime)} - {formatTime(selectedSlot.stopDateTime)}</span></p>
               <p>Duration: <span className="font-medium">{availability.durationMinutes} minutes</span></p>
             </div>

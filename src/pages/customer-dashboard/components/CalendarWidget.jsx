@@ -162,7 +162,7 @@ const CalendarWidget = ({ bookings = [], onDateSelect, selectedDate }) => {
         <div className="mt-4 p-3 bg-muted/50 rounded-md">
           <p className="text-sm font-medium text-foreground mb-1">
             {selectedDate?.toLocaleDateString('en-US', {
-              weekday: 'long',
+              weekday: 'short',
               month: 'long',
               day: 'numeric',
               year: 'numeric'

@@ -79,7 +79,7 @@ const DateTimePicker = ({
     if (!dateString) return '';
     const date = new Date(dateString);
     return date?.toLocaleDateString('en-US', { 
-      weekday: 'long', 
+      weekday: 'short',
       year: 'numeric', 
       month: 'long', 
       day: 'numeric' 

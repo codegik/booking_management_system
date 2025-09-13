@@ -63,7 +63,7 @@ const BookingCalendarWidget = () => {
 
   const formatDate = (date) => {
     return date?.toLocaleDateString('en-US', {
-      weekday: 'long',
+      weekday: 'short',
       year: 'numeric',
       month: 'short',
       day: 'numeric'

@@ -43,6 +43,29 @@ const EmployeeDashboard = () => {
       .catch(() => setError('Failed to load profile'));
   }, [selectedDate]);
 
+  // Fetch bookings for selected date
+  useEffect(() => {
+    const fetchBookings = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const dateString = selectedDate.toISOString().split('T')[0];
+        // Use correct endpoint for employee bookings
+        const response = await makeAuthenticatedRequest(`/api/employee/bookings?startDate=${dateString}&endDate=${dateString}`);
+        if (!response.ok) throw new Error('Failed to fetch bookings');
+        const data = await response.json();
+        // The response is an array of objects, each with a date and bookings array
+        const entry = data.find(d => d.date === dateString);
+        setBookings(entry?.bookings || []);
+      } catch (err) {
+        setError(err.message || 'Failed to fetch bookings');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchBookings();
+  }, [selectedDate]);
+
   const handlePrevDay = () => {
     const prev = new Date(selectedDate);
     prev.setDate(prev.getDate() - 1);
@@ -55,17 +78,17 @@ const EmployeeDashboard = () => {
   };
 
   const handleCancelBooking = async (bookingId) => {
-    const employeeId = localStorage.getItem('employeeId');
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`/api/employee/${employeeId}/bookings/${bookingId}/cancel`, { method: 'PUT' });
+      const response = await makeAuthenticatedRequest(`/api/employee/bookings/${bookingId}/cancel`, { method: 'PUT' });
       if (!response.ok) throw new Error('Failed to cancel booking');
-      // Refresh bookings
+      // Refresh bookings after cancellation
       const dateString = selectedDate.toISOString().split('T')[0];
-      const bookingsRes = await fetch(`/api/employee/${employeeId}/bookings?startDate=${dateString}&endDate=${dateString}`);
+      const bookingsRes = await makeAuthenticatedRequest(`/api/employee/bookings?startDate=${dateString}&endDate=${dateString}`);
       const bookingsData = await bookingsRes.json();
-      setBookings(bookingsData.bookings || []);
+      const entry = bookingsData.find(d => d.date === dateString);
+      setBookings(entry?.bookings || []);
     } catch (err) {
       setError(err.message || 'Failed to cancel booking');
     } finally {
@@ -74,17 +97,17 @@ const EmployeeDashboard = () => {
   };
 
   const handleCompleteBooking = async (bookingId) => {
-    const employeeId = localStorage.getItem('employeeId');
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`/api/employee/${employeeId}/bookings/${bookingId}/complete`, { method: 'PUT' });
+      const response = await makeAuthenticatedRequest(`/api/employee/bookings/${bookingId}/complete`, { method: 'PUT' });
       if (!response.ok) throw new Error('Failed to mark booking as completed');
-      // Refresh bookings
+      // Refresh bookings after completion
       const dateString = selectedDate.toISOString().split('T')[0];
-      const bookingsRes = await fetch(`/api/employee/${employeeId}/bookings?startDate=${dateString}&endDate=${dateString}`);
+      const bookingsRes = await makeAuthenticatedRequest(`/api/employee/bookings?startDate=${dateString}&endDate=${dateString}`);
       const bookingsData = await bookingsRes.json();
-      setBookings(bookingsData.bookings || []);
+      const entry = bookingsData.find(d => d.date === dateString);
+      setBookings(entry?.bookings || []);
     } catch (err) {
       setError(err.message || 'Failed to mark booking as completed');
     } finally {
@@ -117,8 +140,8 @@ const EmployeeDashboard = () => {
                 <div key={booking.id} className="bg-card border border-border rounded-lg p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold text-lg text-foreground">{booking.workName}</div>
-                    <div className="text-sm text-muted-foreground">Customer: {booking.customerName}</div>
-                    <div className="text-sm text-muted-foreground">Time: {new Date(booking.startDateTime).toLocaleTimeString()} - {new Date(booking.stopDateTime).toLocaleTimeString()}</div>
+                    <div className="text-sm text-muted-foreground">{booking.customerName}</div>
+                    <div className="text-sm text-muted-foreground">{new Date(booking.startDateTime).toLocaleTimeString()} - {new Date(booking.stopDateTime).toLocaleTimeString()}</div>
                     <span className={`px-2 py-1 text-xs rounded-full border ${booking.status === 'CONFIRMED' ? 'bg-green-50 text-green-600 border-green-200' : booking.status === 'CANCELLED' ? 'bg-red-50 text-red-600 border-red-200' : booking.status === 'COMPLETED' ? 'bg-blue-50 text-blue-600 border-blue-200' : 'bg-gray-50 text-gray-600 border-gray-200'}`}>{booking.status}</span>
                   </div>
                   <div className="flex flex-col items-end gap-2">
@@ -132,54 +155,6 @@ const EmployeeDashboard = () => {
                 </div>
               ))}
             </div>
-          )}
-        </section>
-        {/* Services Provided */}
-        <section className="mb-8">
-          <h2 className="text-lg font-semibold mb-2">Services You Provide</h2>
-          {services.length === 0 ? (
-            <div className="text-muted-foreground">No services assigned.</div>
-          ) : (
-            <div className="space-y-2">
-              {services.map(service => (
-                <div key={service.id} className="bg-card border border-border rounded-lg p-3">
-                  <div className="font-semibold">{service.name}</div>
-                  <div className="text-sm text-muted-foreground">{service.description}</div>
-                  {/* Customers who booked this service today */}
-                  <div className="mt-2">
-                    <span className="font-semibold text-xs">Today's Customers:</span>
-                    <ul className="list-disc ml-4">
-                      {bookings.filter(b => b.workId === service.id).map(b => (
-                        <li key={b.id} className="text-xs">{b.customerName}</li>
-                      ))}
-                      {bookings.filter(b => b.workId === service.id).length === 0 && (
-                        <li className="text-xs text-muted-foreground">None</li>
-                      )}
-                    </ul>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-        {/* Profile Section */}
-        <section>
-          <h2 className="text-lg font-semibold mb-2">Your Profile</h2>
-          {employee ? (
-            <div className="bg-card border border-border rounded-lg p-4 flex items-center gap-4">
-              {employee.pictureUrl ? (
-                <img src={employee.pictureUrl} alt="Profile" className="w-16 h-16 rounded-full object-cover border" />
-              ) : (
-                <Icon name="User" size={32} />
-              )}
-              <div>
-                <div className="font-semibold text-lg">{employee.name}</div>
-                <div className="text-sm text-muted-foreground">{employee.email}</div>
-                <div className="text-sm text-muted-foreground">{employee.cellphone}</div>
-              </div>
-            </div>
-          ) : (
-            <div className="text-muted-foreground">Loading profile...</div>
           )}
         </section>
       </main>
