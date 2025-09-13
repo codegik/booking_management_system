@@ -4,7 +4,7 @@ import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Select from '../../components/ui/Select';
-import RoleBasedHeader from '../../components/ui/RoleBasedHeader';
+import CompanyHeader from '../../components/ui/CompanyHeader';
 import { clearAuthData, makeAuthenticatedRequest } from '../../utils/auth';
 import useCompanyDetails from '../../utils/useCompanyDetails';
 
@@ -275,7 +275,7 @@ const ServiceManagementScreen = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <RoleBasedHeader
+      <CompanyHeader
         company={company}
       />
 

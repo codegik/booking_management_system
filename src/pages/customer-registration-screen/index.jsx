@@ -70,8 +70,8 @@ const CustomerRegistrationScreen = () => {
 
   // Load saved customer name and phone from localStorage on mount
   useEffect(() => {
-    const savedName = localStorage.getItem('savedCustomerName');
-    const savedPhone = localStorage.getItem('savedCustomerPhone');
+    const savedName = localStorage.getItem('savedName');
+    const savedPhone = localStorage.getItem('savedPhone');
     setFormData(prev => ({
       ...prev,
       name: savedName || '',
@@ -81,11 +81,11 @@ const CustomerRegistrationScreen = () => {
 
   // Save name and phone to localStorage when they change
   useEffect(() => {
-    localStorage.setItem('savedCustomerName', formData.name || '');
+    localStorage.setItem('savedName', formData.name || '');
   }, [formData.name]);
 
   useEffect(() => {
-    localStorage.setItem('savedCustomerPhone', formData.phone || '');
+    localStorage.setItem('savedPhone', formData.phone || '');
   }, [formData.phone]);
 
   // Validation function
@@ -164,18 +164,23 @@ const CustomerRegistrationScreen = () => {
          localStorage.setItem('jwtTokenExpiresAt', responseData.expiresAt);
       }
       if (responseData.cellphone) {
-         localStorage.setItem('customerCellphone', responseData.cellphone);
+         localStorage.setItem('userCellphone', responseData.cellphone);
       }
       if (responseData.id) {
-        localStorage.setItem('customerId', responseData.id);
+        localStorage.setItem('userId', responseData.id);
       }
       if (responseData.name) {
-        localStorage.setItem('customerName', responseData.name);
+        localStorage.setItem('userName', responseData.name);
       }
 
       // Navigate to customer dashboard or booking screen
-      navigate('/customer-dashboard');
-
+      if (responseData.role === 'CUSTOMER') {
+        navigate('/customer-dashboard');
+      } else if (responseData.role === 'EMPLOYEE') {
+        navigate('/employee-dashboard');
+      } else {
+        navigate('/' + companyAlias);
+      }
     } catch (error) {
       console.error('Registration failed:', error);
       setError(error.message || 'Registration failed. Please try again.');
@@ -207,7 +212,7 @@ const CustomerRegistrationScreen = () => {
 
   const handleNameChange = (value) => {
     if (value.trim()) {
-      localStorage.setItem('savedCustomerName', value.trim());
+      localStorage.setItem('savedName', value.trim());
     }
       handleInputChange('name', value);
   };

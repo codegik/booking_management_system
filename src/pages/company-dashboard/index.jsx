@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 import Icon from '../../components/AppIcon';
-import RoleBasedHeader from '../../components/ui/RoleBasedHeader';
+import CompanyHeader from '../../components/ui/CompanyHeader';
 import MetricsCard from './components/MetricsCard';
 import BookingCalendarWidget from './components/BookingCalendarWidget';
 import { makeAuthenticatedRequest, handleLogout } from '../../utils/auth';
@@ -85,7 +85,7 @@ const CompanyDashboard = () => {
         >
             ←
         </Button>
-      <RoleBasedHeader
+      <CompanyHeader
         company={company}
       />
       {/* Main Content */}

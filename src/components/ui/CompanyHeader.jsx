@@ -4,7 +4,7 @@ import Icon from '../AppIcon';
 import Button from './Button';
 import {handleLogout} from '../../utils/auth';
 
-const RoleBasedHeader = ({ 
+const CompanyHeader = ({
   company = null
 }) => {
   const navigate = useNavigate();
@@ -57,16 +57,6 @@ const RoleBasedHeader = ({
                   <button
                     onClick={() => {
                       setIsProfileMenuOpen(false);
-                      // Handle profile navigation
-                    }}
-                    className="flex items-center w-full px-4 py-2 text-sm text-foreground hover:bg-muted transition-smooth"
-                  >
-                    <Icon name="User" size={16} className="mr-2" />
-                    Profile
-                  </button>
-                  <button
-                    onClick={() => {
-                      setIsProfileMenuOpen(false);
                       navigate('/company-registration-screen');
                     }}
                     className="flex items-center w-full px-4 py-2 text-sm text-foreground hover:bg-muted transition-smooth"
@@ -93,4 +83,4 @@ const RoleBasedHeader = ({
   );
 };
 
-export default RoleBasedHeader;
+export default CompanyHeader;

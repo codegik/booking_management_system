@@ -33,13 +33,16 @@ const CustomerDashboard = () => {
   const handleLogout = () => {
     // Clear all relevant data from localStorage
     localStorage.removeItem('jwtToken');
-    localStorage.removeItem('customerName');
-    localStorage.removeItem('selectedCompanyId');
     localStorage.removeItem('isAuthenticated');
+    localStorage.removeItem('authProvider');
+    localStorage.removeItem('userEmail');
+    localStorage.removeItem('userName');
+    localStorage.removeItem('userPicture');
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('userCellphone');
+    localStorage.removeItem('selectedCompanyId');
     localStorage.removeItem('jwtTokenExpiresAt');
-    localStorage.removeItem('customerCellphone');
-    localStorage.removeItem('customerId');
-    localStorage.removeItem('customerName');
 
     // Redirect to company home page using alias
     if (company?.alias) {

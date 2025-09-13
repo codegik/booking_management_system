@@ -11,7 +11,7 @@ import {
     markCompanyAsRegistered
 } from '../../utils/auth';
 import useCompanyDetails from '../../utils/useCompanyDetails';
-import RoleBasedHeader from "../../components/ui/RoleBasedHeader";
+import CompanyHeader from "../../components/ui/CompanyHeader";
 
 const CompanyRegistrationScreen = () => {
   const navigate = useNavigate();
@@ -218,7 +218,7 @@ const CompanyRegistrationScreen = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-        <RoleBasedHeader
+        <CompanyHeader
             company={company}
         />
 

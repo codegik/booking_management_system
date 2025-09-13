@@ -24,9 +24,9 @@ export const clearAuthData = () => {
   localStorage.removeItem('userRole');
   localStorage.removeItem('selectedCompanyId');
   localStorage.removeItem('jwtTokenExpiresAt');
-  localStorage.removeItem('customerCellphone');
-  localStorage.removeItem('customerId');
-  localStorage.removeItem('customerName');
+  localStorage.removeItem('userCellphone');
+  localStorage.removeItem('userId');
+  localStorage.removeItem('userName');
 };
 
 export const isCompanyRegistered = () => {
@@ -65,9 +65,13 @@ export const makeAuthenticatedRequest = async (url, options = {}) => {
   return response;
 };
 
-export function handleLogout(navigate) {
+export function handleLogout(navigate, page) {
   clearAuthData();
-  navigate('/');
+  if (page) {
+      navigate(page);
+  } else {
+    navigate('/');
+  }
 }
 
 export const decodeJWT = (token) => {
@@ -91,13 +95,15 @@ export const registerAuthToken = (token) => {
     const decodedToken = decodeJWT(token);
     const isRegistered = decodedToken.alias != null && decodedToken.alias !== '';
 
-    localStorage.setItem('isAuthenticated', 'true');
-    localStorage.setItem('authProvider', 'google');
     localStorage.setItem('jwtToken', token);
+    localStorage.setItem('isAuthenticated', 'true');
+    localStorage.setItem('authProvider', decodedToken.provider);
     localStorage.setItem('userEmail', decodedToken.email);
     localStorage.setItem('userName', decodedToken.name);
     localStorage.setItem('userPicture', decodedToken.pictureUrl);
     localStorage.setItem('userRole', decodedToken.role);
+    localStorage.setItem('userId', decodedToken.userId);
+    localStorage.setItem('userCellphone', decodedToken.cellphone);
 
     return isRegistered;
 }

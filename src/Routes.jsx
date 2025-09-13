@@ -14,6 +14,7 @@ import CustomerDashboard from './pages/customer-dashboard';
 import CustomerBooking from './pages/customer-booking';
 import CustomerBookingHistory from './pages/customer-booking-history';
 import SocialLoginScreen from './pages/social-login-screen';
+import EmployeeDashboard from './pages/employee-dashboard';
 
 const Routes = () => {
   return (
@@ -67,6 +68,14 @@ const Routes = () => {
         <Route path="/customer-dashboard" element={<CustomerDashboard />} />
         <Route path="/customer-booking" element={<CustomerBooking />} />
         <Route path="/customer-booking-history" element={<CustomerBookingHistory />} />
+        <Route
+          path="/employee-dashboard"
+          element={
+            <ProtectedRoute>
+              <EmployeeDashboard />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Customer registration route - must be before the catch-all route */}
         <Route path="/:companyAlias" element={<CustomerRegistrationScreen />} />

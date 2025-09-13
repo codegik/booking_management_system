@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Button from '../../components/ui/Button';
 import Icon from '../../components/AppIcon';
-import RoleBasedHeader from "../../components/ui/RoleBasedHeader";
+import CompanyHeader from "../../components/ui/CompanyHeader";
 import {handleLogout} from "../../utils/auth";
 
 const BookingManagementScreen = () => {
@@ -116,7 +116,7 @@ const BookingManagementScreen = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-        <RoleBasedHeader
+        <CompanyHeader
             company={company}
         />
       {/* Main Content */}

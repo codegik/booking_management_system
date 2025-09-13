@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
-import RoleBasedHeader from '../../components/ui/RoleBasedHeader';
+import CompanyHeader from '../../components/ui/CompanyHeader';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import useCompanyDetails from '../../utils/useCompanyDetails';
@@ -444,7 +444,7 @@ const EmployeeManagementScreen = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <RoleBasedHeader
+      <CompanyHeader
         company={company}
       />
 
